@@ -1,9 +1,14 @@
+// Validate environment variables on app startup
+import '@/lib/env';
+
 import React from "react";
 import type { Metadata } from "next";
 import { JetBrains_Mono, Inter } from "next/font/google";
 import "@/styles/globals.css";
 import { cn } from "@/lib/utils";
 import RootProviders from "@/components/providers";
+import { Navigation } from "@/components/navigation";
+import { Toaster } from "@/components/ui/sonner";
 
 const fontSans = Inter({
   subsets: ["latin"],

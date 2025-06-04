@@ -6,29 +6,33 @@ import { ArrowLeft } from "lucide-react";
 
 export default function NotFound() {
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 lg:px-6 h-auto overflow-y-auto md:overflow-hidden my-15 flex flex-col items-center justify-center">
-      <div className="text-center my-16">
-        <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-neutral-100 mb-6">
-          <span className="text-4xl font-bold text-neutral-400">404</span>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-4xl mx-auto px-4 lg:px-6 py-6">
+        <div className="flex flex-col items-center justify-center min-h-[60vh]">
+          <div className="text-center space-y-6">
+            <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-gray-100 mb-6">
+              <span className="text-4xl font-bold text-gray-400">404</span>
+            </div>
+            
+            <h1 className="text-2xl font-semibold text-gray-900">
+              Page not found
+            </h1>
+            
+            <p className="text-gray-600 text-sm max-w-md mx-auto">
+              Sorry, we couldn't find the page you're looking for. It might have been moved or deleted.
+            </p>
+            
+            <Button 
+              className="bg-gray-900 hover:bg-gray-800 text-white"
+              asChild
+            >
+              <Link href="/">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Home
+              </Link>
+            </Button>
+          </div>
         </div>
-        
-        <h1 className="text-3xl font-semibold text-neutral-800 mb-4">Page not found</h1>
-        
-        <p className="text-md text-muted-foreground max-w-md mx-auto mb-8">
-          Sorry, we couldn't find the page you're looking for. It might have been moved or deleted.
-        </p>
-        
-        <div className="border-r border-neutral-100 bg-neutral-100 h-10 w-0.75 my-8 mx-auto"></div>
-        
-        <Button 
-          className="bg-[#4285F4] hover:bg-[#3B78E7] text-white border-none"
-          asChild
-        >
-          <Link href="/" className="flex items-center">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Home
-          </Link>
-        </Button>
       </div>
     </div>
   );

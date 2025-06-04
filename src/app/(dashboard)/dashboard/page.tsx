@@ -1,74 +1,176 @@
 import { getUser } from "@/lib/auth-utils";
+import { db } from "@/lib/db";
+import { prompt } from "@/lib/db/schema";
+import { eq, desc } from "drizzle-orm";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Github } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import { Plus, Calendar, Eye, ThumbsUp, Copy, Edit, Trash2 } from "lucide-react";
+import { notFound } from "next/navigation";
+
+async function getUserPrompts(userId: string) {
+	const userPrompts = await db
+		.select({
+			id: prompt.id,
+			title: prompt.title,
+			slug: prompt.slug,
+			excerpt: prompt.excerpt,
+			promptType: prompt.promptType,
+			upvotes: prompt.upvotes,
+			views: prompt.views,
+			copyCount: prompt.copyCount,
+			published: prompt.published,
+			createdAt: prompt.createdAt,
+		})
+		.from(prompt)
+		.where(eq(prompt.authorId, userId))
+		.orderBy(desc(prompt.createdAt));
+
+	return userPrompts;
+}
+
+function getPromptTypeColor(type: string) {
+	switch (type) {
+		case "system":
+			return "bg-blue-100 text-blue-800 border-blue-200";
+		case "user":
+			return "bg-green-100 text-green-800 border-green-200";
+		case "developer":
+			return "bg-purple-100 text-purple-800 border-purple-200";
+		default:
+			return "bg-gray-100 text-gray-800 border-gray-200";
+	}
+}
 
 export default async function DashboardPage() {
 	const user = await getUser();
+	
+	if (!user) {
+		notFound();
+	}
+
+	const userPrompts = await getUserPrompts(user.id);
 
 	return (
-		<div className="flex flex-col items-center justify-center w-full h-[calc(100vh-4rem)] px-4">
-			<Card className="w-full max-w-2xl shadow-lg border-muted/20 bg-card/50 backdrop-blur-sm rounded-none border-dashed">
-				<CardHeader className="space-y-1">
-					<div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 mb-2">
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="20"
-							height="20"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth="2"
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							className="text-primary"
-						>
-							<rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-							<path d="M7 11V7a5 5 0 0 1 10 0v4" />
-						</svg>
-					</div>
-					<CardTitle className="text-xl md:text-2xl font-semibold tracking-tight">Protected Dashboard</CardTitle>
-					<CardDescription className="text-muted-foreground">
-						This is a protected route accessible only to authenticated users.
-					</CardDescription>
-				</CardHeader>
-				<CardContent className="pt-4">
-					<div className="rounded-lg border border-dashed border-muted-foreground/20 bg-muted/50 p-8 text-center">
-						<h3 className="font-medium text-muted-foreground mb-1">Your Dashboard Awaits</h3>
-						<p className="text-sm text-muted-foreground/70 mb-6">
-							Start building your ideal dashboard by adding components and data visualizations.
-						</p>
-						<div className="flex items-center justify-center gap-2">
-							<Button variant="outline" asChild className="relative border-dashed">
-								<a href="https://github.com/rahul-kumar-v" target="_blank" className="gap-2 group">
-									<div className="w-full h-[1px] bg-linear-to-r from-primary/0 via-primary to-primary/0 absolute top-0 -left-1/2 translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-									<Github className="size-4" />
-									<span>GitHub</span>
-								</a>
-							</Button>
-							<Button variant="outline" asChild className="relative border-dashed">
-								<a href="https://x.com/rahul_kumar_v" target="_blank" className="gap-2 group">
-									<div className="w-full h-[1px] bg-linear-to-r from-primary/0 via-primary to-primary/0 absolute top-0 -left-1/2 translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-									<svg
-										viewBox="0 0 1200 1227"
-										xmlns="http://www.w3.org/2000/svg"
-										fill="var(--foreground)"
-										className="size-4"
-									>
-										<path d="M714.163 519.284L1160.89 0H1055.03L667.137 450.887L357.328 0H0L468.492 681.821L0 1226.37H105.866L515.491 750.218L842.672 1226.37H1200L714.137 519.284H714.163ZM569.165 687.828L521.697 619.934L144.011 79.6944H306.615L611.412 515.685L658.88 583.579L1055.08 1150.3H892.476L569.165 687.854V687.828Z" />
-									</svg>
-									<span>X</span>
-								</a>
-							</Button>
+		<div className="min-h-screen bg-gray-50">
+			<div className="max-w-4xl mx-auto px-4 lg:px-6 py-6">
+				<div className="space-y-6">
+					{/* Header */}
+					<div className="flex items-center justify-between py-8">
+						<div>
+							<h1 className="text-2xl font-semibold text-gray-900 mb-2">
+								My Prompts
+							</h1>
+							<p className="text-gray-600 text-sm">
+								You have {userPrompts.length} prompt{userPrompts.length !== 1 ? 's' : ''}
+							</p>
 						</div>
+						<Button asChild className="bg-gray-900 hover:bg-gray-800 text-white">
+							<Link href="/dashboard/add-prompt">
+								<Plus className="h-4 w-4 mr-2" />
+								Add Prompt
+							</Link>
+						</Button>
 					</div>
-				</CardContent>
-				<CardFooter className="flex justify-between border-t border-muted/20 pt-4 text-xs text-muted-foreground/70">
-					<p>Signed in as: {user?.email}</p>
-					<p>Built with <Link href="/" className="font-bold hover:underline">Titan</Link></p>
-				</CardFooter>
-			</Card>
+
+					{/* Prompts List */}
+					{userPrompts.length === 0 ? (
+						<div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+							{/* Empty State */}
+							<div className="p-12 text-center">
+								<div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 mb-4">
+									<Plus className="h-6 w-6 text-gray-400" />
+								</div>
+								<h3 className="text-lg font-medium text-gray-900 mb-2">
+									No prompts yet
+								</h3>
+								<p className="text-gray-600 text-sm mb-4">
+									Get started by creating your first AI prompt.
+								</p>
+								<Button asChild className="bg-gray-900 hover:bg-gray-800 text-white">
+									<Link href="/dashboard/add-prompt">
+										Create your first prompt
+									</Link>
+								</Button>
+							</div>
+						</div>
+					) : (
+						<div className="space-y-4">
+							{userPrompts.map((userPrompt) => (
+								<Card key={userPrompt.id} className="hover:shadow-md transition-shadow">
+									<CardContent className="pt-6">
+										<div className="flex flex-col md:flex-row md:items-start gap-4">
+											<div className="flex-1">
+												<div className="flex items-start justify-between gap-4 mb-3">
+													<h3 className="font-semibold text-gray-900 text-lg leading-tight">
+														<Link 
+															href={`/prompts/${userPrompt.slug}`}
+															className="hover:text-gray-700 transition-colors"
+														>
+															{userPrompt.title}
+														</Link>
+													</h3>
+													<div className="flex items-center gap-2">
+														<Badge 
+															variant="outline" 
+															className={`${getPromptTypeColor(userPrompt.promptType)} text-xs whitespace-nowrap`}
+														>
+															{userPrompt.promptType}
+														</Badge>
+														{!userPrompt.published && (
+															<Badge variant="outline" className="text-xs text-yellow-600 border-yellow-200 bg-yellow-50">
+																Draft
+															</Badge>
+														)}
+													</div>
+												</div>
+												
+												<p className="text-gray-600 text-sm mb-4 leading-relaxed">
+													{userPrompt.excerpt}
+												</p>
+												
+												<div className="flex items-center justify-between">
+													<div className="flex items-center gap-4 text-sm text-gray-500">
+														<div className="flex items-center gap-1">
+															<ThumbsUp className="h-4 w-4" />
+															<span>{userPrompt.upvotes}</span>
+														</div>
+														<div className="flex items-center gap-1">
+															<Eye className="h-4 w-4" />
+															<span>{userPrompt.views}</span>
+														</div>
+														<div className="flex items-center gap-1">
+															<Copy className="h-4 w-4" />
+															<span>{userPrompt.copyCount}</span>
+														</div>
+														<div className="flex items-center gap-1">
+															<Calendar className="h-4 w-4" />
+															<span>{new Date(userPrompt.createdAt).toLocaleDateString()}</span>
+														</div>
+													</div>
+													
+													<div className="flex items-center gap-2">
+														<Button variant="outline" size="sm" asChild>
+															<Link href={`/dashboard/edit/${userPrompt.slug}`}>
+																<Edit className="h-4 w-4 mr-1" />
+																Edit
+															</Link>
+														</Button>
+														<Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+															<Trash2 className="h-4 w-4" />
+														</Button>
+													</div>
+												</div>
+											</div>
+										</div>
+									</CardContent>
+								</Card>
+							))}
+						</div>
+					)}
+				</div>
+			</div>
 		</div>
 	);
 }

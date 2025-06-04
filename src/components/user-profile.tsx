@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -24,14 +24,35 @@ import {
   Plus, 
   FileText, 
   LayoutDashboard,
-  Settings
+  Settings,
+  ExternalLink
 } from "lucide-react"
 import { cn } from "@/lib/utils";
 
 export function UserProfile({ className }: { className?: string }) {
   const [signingOut, setSigningOut] = useState(false);
+  const [username, setUsername] = useState<string | null>(null);
   const { data: session, isPending } = useSession();
   const router = useRouter();
+
+  // Fetch username when session is available
+  useEffect(() => {
+    if (session?.user) {
+      fetchUsername();
+    }
+  }, [session]);
+
+  const fetchUsername = async () => {
+    try {
+      const response = await fetch("/api/user/profile");
+      if (response.ok) {
+        const userData = await response.json();
+        setUsername(userData.username);
+      }
+    } catch (error) {
+      console.error("Error fetching username:", error);
+    }
+  };
 
   if (isPending) {
     return (
@@ -61,6 +82,9 @@ export function UserProfile({ className }: { className?: string }) {
             <div className="flex flex-col">
               <p className="font-medium leading-none">{session.user.name}</p>
               <p className="text-sm text-muted-foreground">{session.user.email}</p>
+              {username && (
+                <p className="text-xs text-blue-600">@{username}</p>
+              )}
             </div>
             <Avatar className="size-8">
               <AvatarImage src={session.user.image ?? ""} alt={session.user.name ?? ""} className="rounded-full" />
@@ -77,19 +101,28 @@ export function UserProfile({ className }: { className?: string }) {
           </Link>
         </DropdownMenuItem>
         
+        {username && (
+          <DropdownMenuItem className="cursor-pointer" asChild>
+            <Link href={`/profile/${username}`} className="flex items-center gap-2">
+              <ExternalLink className="size-4" />
+              <span>View Public Profile</span>
+            </Link>
+          </DropdownMenuItem>
+        )}
+        
         <DropdownMenuItem className="cursor-pointer" asChild>
-          <Link href="/profile" className="flex items-center gap-2">
-            <User className="size-4" />
-            <span>Edit Profile</span>
+          <Link href="/dashboard/settings" className="flex items-center gap-2">
+            <Settings className="size-4" />
+            <span>Settings</span>
           </Link>
         </DropdownMenuItem>
         
         <DropdownMenuSeparator />
         
         <DropdownMenuItem className="cursor-pointer" asChild>
-          <Link href="/submit" className="flex items-center gap-2">
+          <Link href="/dashboard/add-prompt" className="flex items-center gap-2">
             <Plus className="size-4" />
-            <span>Post Prompt</span>
+            <span>Add Prompt</span>
           </Link>
         </DropdownMenuItem>
         
@@ -97,15 +130,6 @@ export function UserProfile({ className }: { className?: string }) {
           <Link href="/my-prompts" className="flex items-center gap-2">
             <FileText className="size-4" />
             <span>My Prompts</span>
-          </Link>
-        </DropdownMenuItem>
-        
-        <DropdownMenuSeparator />
-        
-        <DropdownMenuItem className="cursor-pointer" asChild>
-          <Link href="/settings" className="flex items-center gap-2">
-            <Settings className="size-4" />
-            <span>Settings</span>
           </Link>
         </DropdownMenuItem>
         

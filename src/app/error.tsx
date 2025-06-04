@@ -2,9 +2,8 @@
 
 import { useEffect } from "react"
 import Link from "next/link"
-import { Terminal, RefreshCw } from "lucide-react"
+import { RefreshCw, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 
 export default function Error({
   error,
@@ -18,49 +17,45 @@ export default function Error({
   }, [error])
 
   return (
-    <div className="flex h-screen w-full items-center justify-center bg-background">
-      <Card className="w-full max-w-md border-dashed border-2 rounded-none shadow-none">
-        <CardHeader className="border-b border-dashed pb-4">
-          <div className="flex items-center space-x-2">
-            <Terminal className="h-5 w-5" />
-            <span className="text-sm font-mono">system_failure.sh</span>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-4xl mx-auto px-4 lg:px-6 py-6">
+        <div className="flex flex-col items-center justify-center min-h-[60vh]">
+          <div className="text-center space-y-6">
+            <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-red-50 mb-6">
+              <span className="text-4xl font-bold text-red-400">500</span>
+            </div>
+            
+            <h1 className="text-2xl font-semibold text-gray-900">
+              Something went wrong
+            </h1>
+            
+            <p className="text-gray-600 text-sm max-w-md mx-auto">
+              We encountered an unexpected error. Please try refreshing the page or go back to the homepage.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button 
+                onClick={reset}
+                className="bg-gray-900 hover:bg-gray-800 text-white"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Try Again
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                asChild
+              >
+                <Link href="/">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Home
+                </Link>
+              </Button>
+            </div>
           </div>
-        </CardHeader>
-        <CardContent className="pt-6 pb-0 font-mono">
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <span className="text-muted-foreground">$</span>
-              <span>status</span>
-            </div>
-            <div className="space-y-1 pl-6">
-              <p className="text-3xl font-bold">500</p>
-              <p className="text-muted-foreground">Server error encountered</p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-muted-foreground">$</span>
-              <span>error_trace</span>
-            </div>
-            <div className="pl-6 text-sm text-muted-foreground">
-              <p className="truncate">{error?.digest || "Unknown error occurred"}</p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-muted-foreground">$</span>
-              <div className="flex items-center">
-                <span>repair_system</span>
-                <span className="ml-1 h-5 w-2 animate-pulse bg-foreground inline-block" />
-              </div>
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter className="pt-6 border-t border-dashed mt-6 flex flex-col sm:flex-row flex-wrap gap-2">
-          <Button variant="outline" className="w-full rounded-none border-dashed" onClick={reset}>
-            <RefreshCw className="mr-2 h-4 w-4" />$ system_restart
-          </Button>
-          <Button variant="outline" className="w-full rounded-none border-dashed" asChild>
-            <Link href="/">$ cd /home</Link>
-          </Button>
-        </CardFooter>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }

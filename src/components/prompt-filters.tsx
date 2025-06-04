@@ -2,8 +2,7 @@
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Search, Filter } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 export function PromptFilters() {
@@ -23,17 +22,17 @@ export function PromptFilters() {
         {/* Prompt Type Tabs */}
         <Tabs defaultValue="all" className="w-full lg:w-auto">
           <TabsList className="grid w-full lg:w-auto grid-cols-4 lg:grid-cols-4">
-            <TabsTrigger value="all">All Prompts</TabsTrigger>
-            <TabsTrigger value="system">System</TabsTrigger>
-            <TabsTrigger value="user">User</TabsTrigger>
-            <TabsTrigger value="developer">Developer</TabsTrigger>
+            <TabsTrigger value="all" className="cursor-pointer">All Prompts</TabsTrigger>
+            <TabsTrigger value="system" className="cursor-pointer">System</TabsTrigger>
+            <TabsTrigger value="user" className="cursor-pointer">User</TabsTrigger>
+            <TabsTrigger value="developer" className="cursor-pointer">Developer</TabsTrigger>
           </TabsList>
         </Tabs>
         
         {/* Sort and Filter Controls */}
         <div className="flex gap-3 w-full lg:w-auto">
           <Select defaultValue="recent">
-            <SelectTrigger className="w-full lg:w-[180px]">
+            <SelectTrigger className="w-full lg:w-[180px] cursor-pointer">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
@@ -45,7 +44,7 @@ export function PromptFilters() {
           </Select>
           
           <Select>
-            <SelectTrigger className="w-full lg:w-[180px]">
+            <SelectTrigger className="w-full lg:w-[180px] cursor-pointer">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
@@ -58,10 +57,6 @@ export function PromptFilters() {
               <SelectItem value="business">Business</SelectItem>
             </SelectContent>
           </Select>
-          
-          <Button variant="outline" size="icon" className="shrink-0">
-            <Filter className="h-4 w-4" />
-          </Button>
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 export default function Loading() {
 	return (
 		<div className="flex flex-col items-center justify-center w-full h-[calc(100vh-4rem)] px-4">
-			<div className="w-full max-w-2xl shadow-lg border-muted/20 bg-card/50 backdrop-blur-sm rounded-none border-dashed">
+			<div className="w-full max-w-2xl border-muted/20 bg-card/50 backdrop-blur-sm rounded-none border-dashed">
 				<div className="space-y-1 p-6">
 					<div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 mb-2">
 						<div className="w-5 h-5 rounded-full bg-muted-foreground/20 animate-pulse" />

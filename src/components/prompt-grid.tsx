@@ -1,123 +1,33 @@
 "use client";
 
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Heart, Eye, MessageCircle, Copy, ExternalLink } from "lucide-react";
+import { ChevronUp, MessageCircle, Copy } from "lucide-react";
 import Link from "next/link";
+import { calculatePromptTokens, formatTokenCount } from "@/lib/token-calculator";
 
-// Mock data for demonstration
-const mockPrompts = [
-  {
-    id: "1",
-    title: "Professional Email Writer",
-    excerpt: "A comprehensive system prompt for writing professional emails with proper tone, structure, and etiquette. Perfect for business communications.",
-    content: "You are a professional email writing assistant...",
-    promptType: "system",
-    category: "Business",
-    author: {
-      name: "Sarah Chen",
-      image: "/avatars/sarah.jpg",
-      username: "sarahc"
-    },
-    upvotes: 142,
-    views: 1205,
-    comments: 23,
-    featured: true,
-    createdAt: "2024-01-15"
-  },
-  {
-    id: "2",
-    title: "Code Review Assistant",
-    excerpt: "Detailed prompt for conducting thorough code reviews with focus on best practices, security, and performance optimization.",
-    content: "As a senior software engineer, review the following code...",
-    promptType: "developer",
-    category: "Coding",
-    author: {
-      name: "Alex Rodriguez",
-      image: "/avatars/alex.jpg",
-      username: "alexr"
-    },
-    upvotes: 89,
-    views: 756,
-    comments: 15,
-    featured: false,
-    createdAt: "2024-01-14"
-  },
-  {
-    id: "3",
-    title: "Creative Story Generator",
-    excerpt: "Generate engaging short stories with compelling characters, plot twists, and vivid descriptions. Great for writers and content creators.",
-    content: "Write a creative short story that includes...",
-    promptType: "user",
-    category: "Creative",
-    author: {
-      name: "Maya Patel",
-      image: "/avatars/maya.jpg",
-      username: "mayap"
-    },
-    upvotes: 67,
-    views: 432,
-    comments: 8,
-    featured: false,
-    createdAt: "2024-01-13"
-  },
-  {
-    id: "4",
-    title: "Marketing Copy Optimizer",
-    excerpt: "Transform basic product descriptions into compelling marketing copy that converts. Includes A/B testing suggestions.",
-    content: "Optimize the following marketing copy for better conversion...",
-    promptType: "system",
-    category: "Marketing",
-    author: {
-      name: "David Kim",
-      image: "/avatars/david.jpg",
-      username: "davidk"
-    },
-    upvotes: 156,
-    views: 1890,
-    comments: 31,
-    featured: true,
-    createdAt: "2024-01-12"
-  },
-  {
-    id: "5",
-    title: "Data Analysis Helper",
-    excerpt: "Comprehensive prompt for analyzing datasets, identifying patterns, and generating actionable insights with statistical backing.",
-    content: "Analyze the following dataset and provide insights...",
-    promptType: "user",
-    category: "Analysis",
-    author: {
-      name: "Emma Wilson",
-      image: "/avatars/emma.jpg",
-      username: "emmaw"
-    },
-    upvotes: 94,
-    views: 623,
-    comments: 12,
-    featured: false,
-    createdAt: "2024-01-11"
-  },
-  {
-    id: "6",
-    title: "API Documentation Generator",
-    excerpt: "Generate comprehensive API documentation with examples, error codes, and best practices. Perfect for developer teams.",
-    content: "Create detailed API documentation for the following endpoints...",
-    promptType: "developer",
-    category: "Coding",
-    author: {
-      name: "James Thompson",
-      image: "/avatars/james.jpg",
-      username: "jamest"
-    },
-    upvotes: 78,
-    views: 445,
-    comments: 9,
-    featured: false,
-    createdAt: "2024-01-10"
-  }
-];
+interface PromptData {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  promptType: string;
+  category: string;
+  author: {
+    id: string;
+    name: string;
+    image?: string;
+    username?: string;
+  };
+  upvotes: number;
+  views: number;
+  copyCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
 
 function getPromptTypeColor(type: string) {
   switch (type) {
@@ -133,84 +43,278 @@ function getPromptTypeColor(type: string) {
 }
 
 export function PromptGrid() {
+  const [prompts, setPrompts] = useState<PromptData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchPrompts();
+  }, []);
+
+  const fetchPrompts = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/prompts');
+      if (response.ok) {
+        const data = await response.json();
+        setPrompts(data.prompts || []);
+      } else {
+        setError('Failed to fetch prompts');
+      }
+    } catch (error) {
+      setError('Failed to fetch prompts');
+      console.error('Error fetching prompts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="p-8 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading prompts...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="p-8 text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <Button onClick={fetchPrompts} variant="outline">
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (prompts.length === 0) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="p-8 text-center">
+          <p className="text-gray-600 mb-4">No prompts available yet.</p>
+          <Button asChild>
+            <Link href="/sign-in">Sign in to create the first prompt</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Calculate tokens for each prompt
+  const promptsWithTokens = prompts.map(prompt => ({
+    ...prompt,
+    tokens: calculatePromptTokens(prompt.title, prompt.excerpt, prompt.content).tokens
+  }));
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {mockPrompts.map((prompt) => (
-        <Card key={prompt.id} className="group hover:shadow-lg transition-all duration-200 border-gray-200">
-          <CardHeader className="pb-3">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge 
-                    variant="outline" 
-                    className={`text-xs font-medium ${getPromptTypeColor(prompt.promptType)}`}
-                  >
-                    {prompt.promptType}
-                  </Badge>
-                  {prompt.featured && (
-                    <Badge variant="outline" className="text-xs bg-yellow-100 text-yellow-800 border-yellow-200">
-                      Featured
-                    </Badge>
-                  )}
-                </div>
-                <h3 className="font-semibold text-gray-900 group-hover:text-gray-700 transition-colors line-clamp-2">
-                  <Link href={`/prompts/${prompt.id}`}>
+    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      {/* Desktop Table Header - Hidden on mobile/tablet */}
+      <div className="hidden lg:block border-b border-gray-200 bg-gray-50">
+        <div className="grid grid-cols-12 gap-4 px-4 py-3 text-xs font-medium text-gray-600 uppercase tracking-wide">
+          <div className="col-span-5">Name</div>
+          <div className="col-span-2">Author</div>
+          <div className="col-span-1">Tokens</div>
+          <div className="col-span-2">Votes</div>
+          <div className="col-span-2">Copies</div>
+        </div>
+      </div>
+
+      {/* Medium Screen Table Header - Hidden on mobile and desktop */}
+      <div className="hidden md:block lg:hidden border-b border-gray-200 bg-gray-50">
+        <div className="grid grid-cols-10 gap-4 px-4 py-3 text-xs font-medium text-gray-600 uppercase tracking-wide">
+          <div className="col-span-4">Name</div>
+          <div className="col-span-2">Author</div>
+          <div className="col-span-2">Votes</div>
+          <div className="col-span-2">Copies</div>
+        </div>
+      </div>
+
+      {/* Table Body */}
+      <div className="divide-y divide-gray-200">
+        {promptsWithTokens.map((prompt) => (
+          <div key={prompt.id} className="hover:bg-gray-50 transition-colors group">
+            
+            {/* Mobile Layout (< md) */}
+            <div className="block md:hidden p-4 space-y-3">
+              {/* Title */}
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="font-medium text-gray-900 group-hover:text-gray-700 transition-colors text-sm leading-tight flex-1">
+                  <Link href={`/prompts/${prompt.slug}`}>
                     {prompt.title}
                   </Link>
                 </h3>
               </div>
-            </div>
-          </CardHeader>
-          
-          <CardContent className="pb-4">
-            <p className="text-gray-600 text-sm line-clamp-3 mb-4">
-              {prompt.excerpt}
-            </p>
-            
-            <div className="flex items-center gap-2 mb-3">
-              <Avatar className="h-6 w-6">
-                <AvatarImage src={prompt.author.image} alt={prompt.author.name} />
-                <AvatarFallback className="text-xs">
-                  {prompt.author.name.split(' ').map(n => n[0]).join('')}
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-sm text-gray-600">{prompt.author.name}</span>
-              <span className="text-xs text-gray-400">•</span>
-              <Badge variant="outline" className="text-xs">
-                {prompt.category}
-              </Badge>
-            </div>
-          </CardContent>
-          
-          <CardFooter className="pt-0 flex items-center justify-between">
-            <div className="flex items-center gap-4 text-sm text-gray-500">
-              <div className="flex items-center gap-1">
-                <Heart className="h-4 w-4" />
-                <span>{prompt.upvotes}</span>
+              
+              {/* Author and Stats Row */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={prompt.author.image} alt={prompt.author.name} />
+                    <AvatarFallback className="text-xs bg-gray-100">
+                      {prompt.author.name.split(' ').map(n => n[0]).join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm text-gray-600">{prompt.author.name}</span>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-gray-500 font-mono">
+                    {formatTokenCount(prompt.tokens)}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="h-7 w-8 p-0 cursor-pointer border border-gray-300 hover:border-green-500 hover:bg-green-50 hover:text-green-700 transition-all duration-200"
+                    >
+                      <ChevronUp className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm font-medium text-gray-900 min-w-[1.5rem] text-center">
+                      {prompt.upvotes || 0}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-1">
-                <Eye className="h-4 w-4" />
-                <span>{prompt.views}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <MessageCircle className="h-4 w-4" />
-                <span>{prompt.comments}</span>
+              
+              {/* Copy Count Row */}
+              <div className="flex items-center justify-end text-sm text-gray-500">
+                <div className="flex items-center gap-1">
+                  <Copy className="h-3 w-3" />
+                  <span>{prompt.copyCount || 0}</span>
+                </div>
               </div>
             </div>
-            
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <Copy className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <Link href={`/prompts/${prompt.id}`}>
-                  <ExternalLink className="h-4 w-4" />
-                </Link>
-              </Button>
+
+            {/* Medium Screen Layout (md to lg) */}
+            <div className="hidden md:grid lg:hidden grid-cols-10 gap-2 px-4 py-3">
+              {/* Name Column */}
+              <div className="col-span-4">
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-gray-900 group-hover:text-gray-700 transition-colors text-sm truncate">
+                      <Link href={`/prompts/${prompt.slug}`}>
+                        {prompt.title}
+                      </Link>
+                    </h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs text-gray-500 font-mono">
+                        {formatTokenCount(prompt.tokens)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Author Column */}
+              <div className="col-span-2">
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={prompt.author.image} alt={prompt.author.name} />
+                    <AvatarFallback className="text-xs bg-gray-100">
+                      {prompt.author.name.split(' ').map(n => n[0]).join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-gray-900 truncate">{prompt.author.name}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Votes Column */}
+              <div className="col-span-2">
+                <div className="flex items-center gap-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-8 w-9 p-0 cursor-pointer border border-gray-300 hover:border-green-500 hover:bg-green-50 hover:text-green-700 transition-all duration-200"
+                  >
+                    <ChevronUp className="h-7 w-7" />
+                  </Button>
+                  <span className="text-sm font-medium text-gray-900 min-w-[1.5rem] text-center">
+                    {prompt.upvotes || 0}
+                  </span>
+                </div>
+              </div>
+
+              {/* Copies Column */}
+              <div className="col-span-2">
+                <div className="flex items-center gap-1 text-gray-500">
+                  <Copy className="h-3 w-3" />
+                  <span className="text-sm">{prompt.copyCount || 0}</span>
+                </div>
+              </div>
             </div>
-          </CardFooter>
-        </Card>
-      ))}
+
+            {/* Desktop Layout (lg+) - Updated Layout with Copies */}
+            <div className="hidden lg:grid grid-cols-12 gap-2 px-4 py-3">
+              {/* Name Column */}
+              <div className="col-span-5">
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-gray-900 group-hover:text-gray-700 transition-colors text-sm truncate">
+                      <Link href={`/prompts/${prompt.slug}`}>
+                        {prompt.title}
+                      </Link>
+                    </h3>
+                  </div>
+                </div>
+              </div>
+
+              {/* Author Column */}
+              <div className="col-span-2">
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={prompt.author.image} alt={prompt.author.name} />
+                    <AvatarFallback className="text-xs bg-gray-100">
+                      {prompt.author.name.split(' ').map(n => n[0]).join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-gray-900 truncate">{prompt.author.name}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tokens Column */}
+              <div className="col-span-1">
+                <span className="text-sm text-gray-700 font-mono">
+                  {formatTokenCount(prompt.tokens)}
+                </span>
+              </div>
+
+              {/* Votes Column */}
+              <div className="col-span-2">
+                <div className="flex items-center gap-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-8 w-9 p-0 cursor-pointer border border-gray-300 hover:border-green-500 hover:bg-green-50 hover:text-green-700 transition-all duration-200"
+                  >
+                    <ChevronUp className="h-7 w-7" />
+                  </Button>
+                  <span className="text-sm font-medium text-gray-900 min-w-[1.5rem] text-center">
+                    {prompt.upvotes || 0}
+                  </span>
+                </div>
+              </div>
+
+              {/* Copies Column */}
+              <div className="col-span-2">
+                <div className="flex items-center gap-1 text-gray-500">
+                  <Copy className="h-3 w-3" />
+                  <span className="text-sm">{prompt.copyCount || 0}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 } 

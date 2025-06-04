@@ -1,28 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { prompt, category, user, comment } from "@/lib/db/schema";
+import { prompt, category, user } from "@/lib/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
-// GET /api/prompts/[id] - Get single prompt with details
+// GET /api/prompts/[slug] - Get single prompt with details
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const promptId = params.id;
+    const { slug: promptSlug } = await params;
 
-    // Get prompt with author and category
+    // Get prompt with author and category by slug
     const promptResult = await db
       .select({
         id: prompt.id,
         title: prompt.title,
+        slug: prompt.slug,
         excerpt: prompt.excerpt,
         content: prompt.content,
         promptType: prompt.promptType,
         upvotes: prompt.upvotes,
         views: prompt.views,
+        copyCount: prompt.copyCount,
         featured: prompt.featured,
         published: prompt.published,
         createdAt: prompt.createdAt,
@@ -31,6 +33,7 @@ export async function GET(
           id: user.id,
           name: user.name,
           image: user.image,
+          username: user.username,
         },
         category: {
           id: category.id,
@@ -41,7 +44,7 @@ export async function GET(
       .from(prompt)
       .leftJoin(user, eq(prompt.authorId, user.id))
       .leftJoin(category, eq(prompt.categoryId, category.id))
-      .where(eq(prompt.id, promptId))
+      .where(eq(prompt.slug, promptSlug))
       .limit(1);
 
     if (!promptResult[0]) {
@@ -58,7 +61,7 @@ export async function GET(
       headers: await headers(),
     });
 
-    if (!promptData.published && (!session || session.user.id !== promptData.author.id)) {
+    if (!promptData.published && (!session || session.user.id !== promptData.author?.id)) {
       return NextResponse.json(
         { error: "Prompt not found" },
         { status: 404 }
@@ -66,30 +69,19 @@ export async function GET(
     }
 
     // Increment view count (only if not the author)
-    if (!session || session.user.id !== promptData.author.id) {
+    if (!session || session.user.id !== promptData.author?.id) {
       await db
         .update(prompt)
         .set({ 
           views: sql`${prompt.views} + 1`,
           updatedAt: new Date()
         })
-        .where(eq(prompt.id, promptId));
+        .where(eq(prompt.slug, promptSlug));
       
       promptData.views = Number(promptData.views) + 1;
     }
 
-    // Get comments count
-    const commentsCount = await db
-      .select({ count: sql`count(*)` })
-      .from(comment)
-      .where(eq(comment.promptId, promptId));
-
-    return NextResponse.json({
-      prompt: {
-        ...promptData,
-        commentsCount: Number(commentsCount[0]?.count || 0),
-      },
-    });
+    return NextResponse.json(promptData);
   } catch (error) {
     console.error("Error fetching prompt:", error);
     return NextResponse.json(
@@ -99,10 +91,10 @@ export async function GET(
   }
 }
 
-// PUT /api/prompts/[id] - Update prompt
+// PUT /api/prompts/[slug] - Update prompt
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     const session = await auth.api.getSession({
@@ -116,15 +108,15 @@ export async function PUT(
       );
     }
 
-    const promptId = params.id;
+    const { slug: promptSlug } = await params;
     const body = await request.json();
     const { title, excerpt, content, promptType, categoryId, published } = body;
 
     // Check if user owns the prompt
     const existingPrompt = await db
-      .select({ authorId: prompt.authorId })
+      .select({ id: prompt.id, authorId: prompt.authorId })
       .from(prompt)
-      .where(eq(prompt.id, promptId))
+      .where(eq(prompt.slug, promptSlug))
       .limit(1);
 
     if (!existingPrompt[0]) {
@@ -153,7 +145,7 @@ export async function PUT(
         published,
         updatedAt: new Date(),
       })
-      .where(eq(prompt.id, promptId))
+      .where(eq(prompt.slug, promptSlug))
       .returning({
         id: prompt.id,
         title: prompt.title,
@@ -176,10 +168,10 @@ export async function PUT(
   }
 }
 
-// DELETE /api/prompts/[id] - Delete prompt
+// DELETE /api/prompts/[slug] - Delete prompt
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     const session = await auth.api.getSession({
@@ -193,13 +185,13 @@ export async function DELETE(
       );
     }
 
-    const promptId = params.id;
+    const { slug: promptSlug } = await params;
 
     // Check if user owns the prompt
     const existingPrompt = await db
-      .select({ authorId: prompt.authorId })
+      .select({ id: prompt.id, authorId: prompt.authorId })
       .from(prompt)
-      .where(eq(prompt.id, promptId))
+      .where(eq(prompt.slug, promptSlug))
       .limit(1);
 
     if (!existingPrompt[0]) {
@@ -217,7 +209,7 @@ export async function DELETE(
     }
 
     // Delete prompt (comments and upvotes will be cascade deleted)
-    await db.delete(prompt).where(eq(prompt.id, promptId));
+    await db.delete(prompt).where(eq(prompt.slug, promptSlug));
 
     return NextResponse.json({
       message: "Prompt deleted successfully",

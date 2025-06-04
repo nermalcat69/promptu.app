@@ -142,7 +142,7 @@ export default function AdvertisePage() {
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {packages.map((pkg, index) => (
-              <Card key={index} className={`relative ${pkg.popular ? 'border-black shadow-lg' : ''}`}>
+              <Card key={index} className={`relative ${pkg.popular ? 'border-black' : ''}`}>
                 {pkg.popular && (
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                     <Badge className="bg-black text-white">Most Popular</Badge>
@@ -160,7 +160,7 @@ export default function AdvertisePage() {
                   <ul className="space-y-3">
                     {pkg.features.map((feature, featureIndex) => (
                       <li key={featureIndex} className="flex items-center gap-3">
-                        <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
+                        <CheckCircle className="h-7 w-7 text-green-500 flex-shrink-0" />
                         <span className="text-sm">{feature}</span>
                       </li>
                     ))}

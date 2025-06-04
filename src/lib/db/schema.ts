@@ -4,10 +4,12 @@ import { relations } from "drizzle-orm";
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
+  username: text("username").unique(),
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").notNull(),
   image: text("image"),
   bio: text("bio"),
+  website: text("website"),
   createdAt: timestamp("created_at").notNull(),
   updatedAt: timestamp("updated_at").notNull(),
 });
@@ -52,7 +54,7 @@ export const verification = pgTable("verification", {
   updatedAt: timestamp("updated_at"),
 });
 
-// New tables for Promptu
+// Promptu tables
 export const category = pgTable("category", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -66,6 +68,7 @@ export const category = pgTable("category", {
 export const prompt = pgTable("prompt", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),
+  slug: text("slug").notNull().unique(),
   excerpt: text("excerpt").notNull(),
   content: text("content").notNull(),
   promptType: text("prompt_type").notNull(), // "system", "user", "developer"
@@ -75,22 +78,9 @@ export const prompt = pgTable("prompt", {
     .references(() => user.id, { onDelete: "cascade" }),
   upvotes: integer("upvotes").default(0),
   views: integer("views").default(0),
+  copyCount: integer("copy_count").default(0),
   featured: boolean("featured").default(false),
   published: boolean("published").default(true),
-  createdAt: timestamp("created_at").notNull(),
-  updatedAt: timestamp("updated_at").notNull(),
-});
-
-export const comment = pgTable("comment", {
-  id: text("id").primaryKey(),
-  content: text("content").notNull(),
-  promptId: text("prompt_id")
-    .notNull()
-    .references(() => prompt.id, { onDelete: "cascade" }),
-  authorId: text("author_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  parentId: text("parent_id").references(() => comment.id),
   createdAt: timestamp("created_at").notNull(),
   updatedAt: timestamp("updated_at").notNull(),
 });
@@ -109,7 +99,6 @@ export const upvote = pgTable("upvote", {
 // Relations
 export const userRelations = relations(user, ({ many }) => ({
   prompts: many(prompt),
-  comments: many(comment),
   upvotes: many(upvote),
 }));
 
@@ -122,24 +111,7 @@ export const promptRelations = relations(prompt, ({ one, many }) => ({
     fields: [prompt.categoryId],
     references: [category.id],
   }),
-  comments: many(comment),
   upvotes: many(upvote),
-}));
-
-export const commentRelations = relations(comment, ({ one, many }) => ({
-  author: one(user, {
-    fields: [comment.authorId],
-    references: [user.id],
-  }),
-  prompt: one(prompt, {
-    fields: [comment.promptId],
-    references: [prompt.id],
-  }),
-  parent: one(comment, {
-    fields: [comment.parentId],
-    references: [comment.id],
-  }),
-  replies: many(comment),
 }));
 
 export const categoryRelations = relations(category, ({ many }) => ({

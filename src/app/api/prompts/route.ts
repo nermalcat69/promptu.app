@@ -59,16 +59,20 @@ export async function GET(request: NextRequest) {
       .select({
         id: prompt.id,
         title: prompt.title,
+        slug: prompt.slug,
         excerpt: prompt.excerpt,
+        content: prompt.content,
         promptType: prompt.promptType,
         upvotes: prompt.upvotes,
         views: prompt.views,
+        copyCount: prompt.copyCount,
         featured: prompt.featured,
         createdAt: prompt.createdAt,
         author: {
           id: user.id,
           name: user.name,
           image: user.image,
+          username: user.username,
         },
         category: {
           id: category.id,
@@ -129,12 +133,41 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, excerpt, content, promptType, categoryId, tags } = body;
+    const { title, excerpt, content, promptType, categoryId, slug, tags } = body;
 
     // Validate required fields
-    if (!title || !excerpt || !content || !promptType) {
+    if (!title || !excerpt || !content || !promptType || !slug) {
       return NextResponse.json(
         { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    // Validate slug format
+    if (!/^[a-z0-9-]+$/.test(slug)) {
+      return NextResponse.json(
+        { error: "Slug can only contain lowercase letters, numbers, and hyphens" },
+        { status: 400 }
+      );
+    }
+
+    if (slug.length < 3) {
+      return NextResponse.json(
+        { error: "Slug must be at least 3 characters long" },
+        { status: 400 }
+      );
+    }
+
+    // Check if slug already exists
+    const existingPrompt = await db
+      .select({ id: prompt.id })
+      .from(prompt)
+      .where(eq(prompt.slug, slug))
+      .limit(1);
+
+    if (existingPrompt.length > 0) {
+      return NextResponse.json(
+        { error: "This URL slug is already taken. Please choose a different one." },
         { status: 400 }
       );
     }
@@ -145,6 +178,7 @@ export async function POST(request: NextRequest) {
       .values({
         id: crypto.randomUUID(),
         title,
+        slug,
         excerpt,
         content,
         promptType,
@@ -152,6 +186,7 @@ export async function POST(request: NextRequest) {
         authorId: session.user.id,
         upvotes: 0,
         views: 0,
+        copyCount: 0,
         featured: false,
         published: true,
         createdAt: new Date(),
@@ -160,6 +195,7 @@ export async function POST(request: NextRequest) {
       .returning({
         id: prompt.id,
         title: prompt.title,
+        slug: prompt.slug,
         excerpt: prompt.excerpt,
         promptType: prompt.promptType,
         createdAt: prompt.createdAt,

@@ -20,7 +20,7 @@ export default function AuthCard({
   mode?: "sign-in" | "sign-up";
 }) {
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [discordLoading, setDiscordLoading] = useState(false);
+  const [githubLoading, setGithubLoading] = useState(false);
 
   return (
     <Card className="max-w-md w-full rounded-none border-dashed">
@@ -43,34 +43,30 @@ export default function AuthCard({
               icon={<Icons.Google />}
             />
             <SignInButton
-              title="Sign in with Discord"
-              provider="discord"
-              loading={discordLoading}
-              setLoading={setDiscordLoading}
+              title="Sign in with GitHub"
+              provider="github"
+              loading={githubLoading}
+              setLoading={setGithubLoading}
               callbackURL="/dashboard"
-              icon={<Icons.Discord />}
+              icon={<Icons.Github />}
             />
           </div>
         </div>
       </CardContent>
-      <CardFooter className="flex justify-center border-t border-dashed pt-4">
-        <p className="text-sm text-muted-foreground">
-          {mode === "sign-in" ? (
-            <>
-              Don't have an account?{" "}
-              <Link href="/sign-up" className="text-primary font-medium hover:underline">
-                Sign up
-              </Link>
-            </>
-          ) : (
-            <>
-              Already have an account?{" "}
-              <Link href="/sign-in" className="text-primary font-medium hover:underline">
-                Sign in
-              </Link>
-            </>
-          )}
-        </p>
+      <CardFooter>
+        <div className="flex flex-col gap-2 w-full text-center text-xs text-muted-foreground">
+          <p>
+            By signing in, you agree to our{" "}
+            <Link href="/terms" className="underline underline-offset-4 hover:text-primary">
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="underline underline-offset-4 hover:text-primary">
+              Privacy Policy
+            </Link>
+            .
+          </p>
+        </div>
       </CardFooter>
     </Card>
   );
@@ -85,7 +81,7 @@ const SignInButton = ({
   icon,
 }: {
   title: string;
-  provider: "google" | "discord";
+  provider: "google" | "github";
   loading: boolean;
   setLoading: (loading: boolean) => void;
   callbackURL: string;
@@ -95,7 +91,7 @@ const SignInButton = ({
     <Button
       variant="outline"
       size="lg"
-      className={cn("w-full gap-2 border-dashed")}
+      className={cn("w-full gap-2 border-dashed cursor-pointer")}
       disabled={loading}
       onClick={async () => {
         await signIn.social(

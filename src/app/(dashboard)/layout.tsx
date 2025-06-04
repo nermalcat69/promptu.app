@@ -1,8 +1,6 @@
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { UserProfile } from "@/components/user-profile";
-import { BarChart2, CreditCard, Layout, Settings, Users } from "lucide-react";
 import Link from "next/link";
+import { UserProfile } from "@/components/user-profile";
 import { DashboardNavButtons } from "@/components/nav-buttons";
 
 export default function DashboardLayout({
@@ -11,71 +9,31 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="w-full h-screen overflow-hidden flex flex-col">
-      <MockNavbar />
-      <div className="flex h-full">
-        <MockSidebar />
-        <div id="main" className="flex-1 overflow-y-auto">
-          {children}
+    <div className="relative flex min-h-screen flex-col">
+      {/* Header */}
+      <header className="w-full border-b border-gray-200 bg-white sticky top-0 z-50">
+        <div className="flex h-16 items-center justify-between max-w-4xl mx-auto px-4 lg:px-6">
+          <div className="flex items-center gap-6">
+            <Link href="/" className="font-bold flex items-center gap-3">
+              <span className="text-lg text-gray-900">Promptu</span>
+            </Link>
+            <nav className="hidden text-sm md:flex gap-6">
+              <Link href="/dashboard" className="text-gray-600 hover:text-gray-900 transition-colors font-medium">
+                Dashboard
+              </Link>
+            </nav>
+          </div>
+          <div className="flex items-center gap-4">
+            <DashboardNavButtons />
+            <UserProfile className="size-9" />
+          </div>
         </div>
-      </div>
-    </div>
-  )
-}
+      </header>
 
-const MockNavbar = () => {
-  return (
-    <div id="nav" className="border-b border-dashed bg-[#FBFBFB] flex items-center justify-between">
-      <div id="brand" className="h-full md:border-r border-dashed w-[300px] flex items-center justify-center">
-        <Button variant="ghost" className="w-full h-full font-heading text-lg md:text-2xl font-bold" asChild>
-          <Link href="/">
-            <span>KitePortfolio</span>
-          </Link>
-        </Button>
-      </div>
-      <div className="flex-1 flex items-center justify-end h-full border-dashed divide-x">
-        <DashboardNavButtons />
-        <UserProfile className="size-10 md:size-14" />
-      </div>
+      {/* Main content */}
+      <main className="flex-1 w-full">
+        {children}
+      </main>
     </div>
-  )
-}
-
-const MockSidebar = () => {
-  return (
-    <div id="sidebar" className="w-[300px] border-r border-dashed bg-[#FBFBFB] hidden md:block">
-      <div className="flex flex-col divide-y divide-dashed border-b border-dashed">
-        <Button variant="ghost" className="border-dashed h-14 text-left justify-start pl-8" asChild>
-          <Link href="/dashboard">
-            <Layout />
-            <span>Dashboard</span>
-          </Link>
-        </Button>
-        <Button variant="ghost" className="border-dashed h-14 text-left justify-start pl-8 opacity-50 cursor-not-allowed" disabled asChild>
-          <Link href="/settings">
-            <Settings />
-            <span>Settings</span>
-          </Link>
-        </Button>
-        <Button variant="ghost" className="border-dashed h-14 text-left justify-start pl-8 opacity-50 cursor-not-allowed" disabled asChild>
-          <Link href="/analytics">
-            <BarChart2 />
-            <span>Analytics</span>
-          </Link>
-        </Button>
-        <Button variant="ghost" className="border-dashed h-14 text-left justify-start pl-8 opacity-50 cursor-not-allowed" disabled asChild>
-          <Link href="/users">
-            <Users />
-            <span>Users</span>
-          </Link>
-        </Button>
-        <Button variant="ghost" className="border-dashed h-14 text-left justify-start pl-8 opacity-50 cursor-not-allowed" disabled asChild>
-          <Link href="/billing">
-            <CreditCard />
-            <span>Billing</span>
-          </Link>
-        </Button>
-      </div>
-    </div>
-  )
+  );
 }

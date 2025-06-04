@@ -8,6 +8,27 @@
       "when": 1747230620435,
       "tag": "0000_deep_obadiah_stane",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1749043260282,
+      "tag": "0001_peaceful_callisto",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1749044016180,
+      "tag": "0002_wise_gladiator",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1749045396039,
+      "tag": "0003_odd_the_liberteens",
+      "breakpoints": true
     }
   ]
 }
