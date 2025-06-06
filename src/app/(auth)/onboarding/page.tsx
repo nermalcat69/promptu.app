@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation";
 import { User, CheckCircle, RefreshCw, Sparkles } from "lucide-react";
 
 export default function OnboardingPage() {
-  const session = useSession();
+  const { data: session, isPending } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingUsername, setIsGeneratingUsername] = useState(false);
   const [step, setStep] = useState(1);
@@ -28,20 +28,20 @@ export default function OnboardingPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!session.isPending && !session.data) {
+    if (!isPending && !session) {
       router.push("/sign-in");
     }
-  }, [session, router]);
+  }, [session, isPending, router]);
 
   // Auto-generate username when moving to step 2
   useEffect(() => {
-    if (step === 2 && session.data?.user && !formData.username) {
+    if (step === 2 && session?.user && !formData.username) {
       generateUsername();
     }
-  }, [step, session.data, formData.username]);
+  }, [step, session, formData.username]);
 
   const generateUsername = async () => {
-    if (!session.data?.user) return;
+    if (!session?.user) return;
 
     setIsGeneratingUsername(true);
     try {
@@ -70,7 +70,7 @@ export default function OnboardingPage() {
   };
 
   const generateUsernameSuggestions = async () => {
-    if (!session.data?.user) return;
+    if (!session?.user) return;
 
     setIsGeneratingUsername(true);
     try {
@@ -127,7 +127,7 @@ export default function OnboardingPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name: session.data?.user.name,
+          name: session?.user.name,
           username: formData.username,
           bio: formData.bio || null,
           website: formData.website || null,
@@ -151,7 +151,7 @@ export default function OnboardingPage() {
     }
   };
 
-  if (session.isPending) {
+  if (isPending) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -162,7 +162,7 @@ export default function OnboardingPage() {
     );
   }
 
-  if (!session.data) {
+  if (!session) {
     return null;
   }
 
@@ -194,9 +194,9 @@ export default function OnboardingPage() {
                 {/* Profile Picture */}
                 <div className="text-center">
                   <Avatar className="h-24 w-24 mx-auto mb-4">
-                    <AvatarImage src={session.data.user.image || ""} alt={session.data.user.name || ""} />
+                    <AvatarImage src={session.user.image || ""} alt={session.user.name || ""} />
                     <AvatarFallback className="text-xl">
-                      {session.data.user.name?.split(' ').map(n => n[0]).join('')}
+                      {session.user.name?.split(' ').map(n => n[0]).join('')}
                     </AvatarFallback>
                   </Avatar>
                   <p className="text-sm text-gray-600">
@@ -208,7 +208,7 @@ export default function OnboardingPage() {
                 <div>
                   <Label>Display Name</Label>
                   <Input
-                    value={session.data.user.name || ""}
+                    value={session.user.name || ""}
                     disabled
                     className="bg-gray-50"
                   />

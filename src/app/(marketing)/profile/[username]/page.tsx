@@ -240,7 +240,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               ) : (
                 <div className="space-y-4">
                   {userPrompts.map((userPrompt) => (
-                    <Card key={userPrompt.id} className="hover:shadow-md transition-shadow">
+                    <Card key={userPrompt.id} className="hover:bg-gray-50 transition-colors">
                       <CardContent className="pt-6">
                         <div className="space-y-4">
                           <div className="flex items-start justify-between gap-4">

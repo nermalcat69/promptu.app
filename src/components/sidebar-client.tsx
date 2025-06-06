@@ -1,19 +1,29 @@
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Star } from "lucide-react";
 import Link from "next/link";
-import { getTrendingService, getCommunityStatsService } from "@/services/ServiceFactory";
 
-export async function Sidebar() {
-  // Use services to get real data
-  const trendingService = getTrendingService();
-  const communityStatsService = getCommunityStatsService();
+interface TrendingPrompt {
+  id: string;
+  title: string;
+  slug: string;
+  upvotes: number | null;
+}
 
-  const [trendingPrompts, stats] = await Promise.all([
-    trendingService.getTrendingPrompts(5, 'weekly'),
-    communityStatsService.getCommunityStats()
-  ]);
+interface CommunityStats {
+  totalPrompts: number;
+  activeUsers: number;
+  weeklyPrompts: number;
+}
 
+interface SidebarClientProps {
+  trendingPrompts: TrendingPrompt[];
+  stats: CommunityStats;
+}
+
+export function SidebarClient({ trendingPrompts, stats }: SidebarClientProps) {
   return (
     <div className="space-y-6">
       {/* Trending Prompts */}
@@ -68,8 +78,6 @@ export async function Sidebar() {
         </CardContent>
       </Card>
 
-
-
       {/* Quick Stats */}
       <Card>
         <CardHeader className="pb-2">
@@ -87,14 +95,6 @@ export async function Sidebar() {
           <div className="flex justify-between items-center">
             <span className="text-xs text-gray-600">This Week</span>
             <span className="text-xs font-medium text-green-600">+{stats.weeklyPrompts} prompts</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-xs text-gray-600">Total Upvotes</span>
-            <span className="text-xs font-medium text-blue-600">{stats.totalUpvotes.toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-xs text-gray-600">Total Copies</span>
-            <span className="text-xs font-medium text-purple-600">{stats.totalCopies.toLocaleString()}</span>
           </div>
         </CardContent>
       </Card>

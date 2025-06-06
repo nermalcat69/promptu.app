@@ -4,6 +4,7 @@ import { prompt, category, user } from "@/lib/db/schema";
 import { eq, desc, sql, ilike, and } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { validatePromptContent, formatValidationErrorMessage } from "@/lib/validations/prompt-validation";
 
 // GET /api/prompts - List prompts with filters
 export async function GET(request: NextRequest) {
@@ -134,6 +135,25 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { title, excerpt, content, promptType, categoryId, slug, tags } = body;
+
+    // Validate content using our validation utility
+    const validation = validatePromptContent({
+      title: title || '',
+      description: excerpt || '',
+      content: content || '',
+    });
+
+    if (!validation.isValid) {
+      const errorMessages = validation.errors.map(formatValidationErrorMessage);
+      return NextResponse.json(
+        { 
+          error: "Validation failed", 
+          details: errorMessages,
+          validationErrors: validation.errors
+        },
+        { status: 400 }
+      );
+    }
 
     // Validate required fields
     if (!title || !excerpt || !content || !promptType || !slug) {

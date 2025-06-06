@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ChevronUp, MessageCircle, Copy } from "lucide-react";
 import Link from "next/link";
 import { calculatePromptTokens, formatTokenCount } from "@/lib/token-calculator";
+import { useDebouncedCallback } from "use-debounce";
 
 interface PromptData {
   id: string;
@@ -36,6 +37,14 @@ interface PromptGridProps {
     sort: string;
     category: string;
   };
+  currentPage?: number;
+  limit?: number;
+  onPaginationUpdate?: (pagination: {
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  }) => void;
 }
 
 function getPromptTypeColor(type: string) {
@@ -51,18 +60,15 @@ function getPromptTypeColor(type: string) {
   }
 }
 
-export function PromptGrid({ filters }: PromptGridProps) {
+export function PromptGrid({ filters, currentPage = 1, limit = 12, onPaginationUpdate }: PromptGridProps) {
   const [prompts, setPrompts] = useState<PromptData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchPrompts();
-  }, [filters]);
-
-  const fetchPrompts = async () => {
+  const fetchPrompts = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
       
       // Build query parameters from filters
       const params = new URLSearchParams();
@@ -70,12 +76,26 @@ export function PromptGrid({ filters }: PromptGridProps) {
       if (filters?.type && filters.type !== 'all') params.set('type', filters.type);
       if (filters?.sort && filters.sort !== 'recent') params.set('sort', filters.sort);
       if (filters?.category && filters.category !== 'all') params.set('category', filters.category);
+      params.set('page', currentPage.toString());
+      params.set('limit', limit.toString());
 
-      const response = await fetch(`/api/prompts?${params.toString()}`);
+      const url = `/api/prompts?${params.toString()}`;
+      
+      const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
         setPrompts(data.prompts || []);
-      } else {
+        
+        // Update pagination info in parent
+        if (onPaginationUpdate && data.pagination) {
+          onPaginationUpdate({
+            total: data.pagination.total,
+            totalPages: data.pagination.totalPages,
+            hasNext: data.pagination.hasNext,
+            hasPrev: data.pagination.hasPrev,
+          });
+        }
+              } else {
         setError('Failed to fetch prompts');
       }
     } catch (error) {
@@ -84,44 +104,22 @@ export function PromptGrid({ filters }: PromptGridProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters?.search, filters?.type, filters?.sort, filters?.category, currentPage, limit, onPaginationUpdate]);
 
-  // Filter and sort prompts client-side as fallback
-  const filteredPrompts = prompts.filter(prompt => {
+  // Debounce search requests to avoid excessive API calls
+  const debouncedFetchPrompts = useDebouncedCallback(fetchPrompts, 300);
+
+  useEffect(() => {
+    // For search, use debounced version. For other filters, fetch immediately
     if (filters?.search) {
-      const searchLower = filters.search.toLowerCase();
-      const matchesSearch = 
-        prompt.title.toLowerCase().includes(searchLower) ||
-        prompt.excerpt.toLowerCase().includes(searchLower) ||
-        prompt.author.name.toLowerCase().includes(searchLower);
-      if (!matchesSearch) return false;
+      debouncedFetchPrompts();
+    } else {
+      fetchPrompts();
     }
-    
-    if (filters?.type && filters.type !== 'all') {
-      if (prompt.promptType !== filters.type) return false;
-    }
-    
-    if (filters?.category && filters.category !== 'all') {
-      if (prompt.category !== filters.category) return false;
-    }
-    
-    return true;
-  });
+  }, [filters?.search, filters?.type, filters?.sort, filters?.category, currentPage, fetchPrompts, debouncedFetchPrompts]);
 
-  // Sort prompts client-side
-  const sortedPrompts = [...filteredPrompts].sort((a, b) => {
-    switch (filters?.sort) {
-      case 'popular':
-        return (b.views || 0) - (a.views || 0);
-      case 'upvotes':
-        return (b.upvotes || 0) - (a.upvotes || 0);
-      case 'copies':
-        return (b.copyCount || 0) - (a.copyCount || 0);
-      case 'recent':
-      default:
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    }
-  });
+  // Since we're using server-side pagination and filtering, use prompts directly
+  const sortedPrompts = prompts;
 
   if (loading) {
     return (

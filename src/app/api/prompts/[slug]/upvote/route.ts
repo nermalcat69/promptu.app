@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { prompt, upvote } from "@/lib/db/schema";
-import { eq, and, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { getVotingService } from "@/services/ServiceFactory";
 
-// GET /api/prompts/[slug]/upvote - Check if user has upvoted
+// GET /api/prompts/[slug]/vote - Get voting status and counts
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
@@ -15,51 +13,41 @@ export async function GET(
       headers: await headers(),
     });
 
-    if (!session) {
-      return NextResponse.json({ upvoted: false });
-    }
-
     const { slug: promptSlug } = await params;
+    const votingService = getVotingService();
 
-    // Get prompt ID from slug
-    const promptResult = await db
-      .select({ id: prompt.id })
-      .from(prompt)
-      .where(eq(prompt.slug, promptSlug))
-      .limit(1);
-
-    if (!promptResult[0]) {
-      return NextResponse.json(
-        { error: "Prompt not found" },
-        { status: 404 }
-      );
+    if (!session) {
+      // Return counts only for unauthenticated users
+      const counts = await votingService.getVoteCounts(promptSlug);
+      return NextResponse.json({
+        upvoted: false,
+        downvoted: false,
+        upvoteCount: counts.upvoteCount,
+        downvoteCount: counts.downvoteCount,
+        netScore: counts.netScore,
+      });
     }
 
-    const promptId = promptResult[0].id;
-
-    // Check if user has upvoted this prompt
-    const existingUpvote = await db
-      .select({ id: upvote.id })
-      .from(upvote)
-      .where(and(
-        eq(upvote.promptId, promptId),
-        eq(upvote.userId, session.user.id)
-      ))
-      .limit(1);
+    // Get full voting status for authenticated users
+    const result = await votingService.getVotingStatus(promptSlug, session.user.id);
 
     return NextResponse.json({
-      upvoted: !!existingUpvote[0],
+      upvoted: result.upvoted,
+      downvoted: result.downvoted,
+      upvoteCount: result.upvoteCount,
+      downvoteCount: result.downvoteCount,
+      netScore: result.upvoteCount - result.downvoteCount,
     });
   } catch (error) {
-    console.error("Error checking upvote status:", error);
+    console.error("Error checking voting status:", error);
     return NextResponse.json(
-      { error: "Failed to check upvote status" },
+      { error: "Failed to check voting status" },
       { status: 500 }
     );
   }
 }
 
-// POST /api/prompts/[slug]/upvote - Toggle upvote
+// POST /api/prompts/[slug]/vote - Toggle upvote or downvote
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
@@ -77,90 +65,43 @@ export async function POST(
     }
 
     const { slug: promptSlug } = await params;
+    const body = await request.json();
+    const { type } = body; // "upvote" or "downvote"
 
-    // Get prompt ID from slug
-    const promptResult = await db
-      .select({ id: prompt.id, authorId: prompt.authorId })
-      .from(prompt)
-      .where(eq(prompt.slug, promptSlug))
-      .limit(1);
-
-    if (!promptResult[0]) {
+    if (!type || !["upvote", "downvote"].includes(type)) {
       return NextResponse.json(
-        { error: "Prompt not found" },
-        { status: 404 }
-      );
-    }
-
-    const promptId = promptResult[0].id;
-    const authorId = promptResult[0].authorId;
-
-    // Prevent users from upvoting their own prompts
-    if (authorId === session.user.id) {
-      return NextResponse.json(
-        { error: "Cannot upvote your own prompt" },
+        { error: "Vote type must be 'upvote' or 'downvote'" },
         { status: 400 }
       );
     }
 
-    // Check if user has already upvoted
-    const existingUpvote = await db
-      .select({ id: upvote.id })
-      .from(upvote)
-      .where(and(
-        eq(upvote.promptId, promptId),
-        eq(upvote.userId, session.user.id)
-      ))
-      .limit(1);
+    const votingService = getVotingService();
 
-    if (existingUpvote[0]) {
-      // Remove upvote
-      await db
-        .delete(upvote)
-        .where(eq(upvote.id, existingUpvote[0].id));
+    // Toggle vote using service
+    const result = type === "upvote" 
+      ? await votingService.toggleUpvote(promptSlug, session.user.id)
+      : await votingService.toggleDownvote(promptSlug, session.user.id);
 
-      // Decrement upvote count
-      await db
-        .update(prompt)
-        .set({
-          upvotes: sql`${prompt.upvotes} - 1`,
-          updatedAt: new Date()
-        })
-        .where(eq(prompt.id, promptId));
-
-      return NextResponse.json({
-        upvoted: false,
-        message: "Upvote removed",
-      });
-    } else {
-      // Add upvote
-      await db
-        .insert(upvote)
-        .values({
-          id: crypto.randomUUID(),
-          promptId,
-          userId: session.user.id,
-          createdAt: new Date(),
-        });
-
-      // Increment upvote count
-      await db
-        .update(prompt)
-        .set({
-          upvotes: sql`${prompt.upvotes} + 1`,
-          updatedAt: new Date()
-        })
-        .where(eq(prompt.id, promptId));
-
-      return NextResponse.json({
-        upvoted: true,
-        message: "Prompt upvoted",
-      });
-    }
+    return NextResponse.json({
+      upvoted: result.upvoted,
+      downvoted: result.downvoted,
+      upvoteCount: result.upvoteCount,
+      downvoteCount: result.downvoteCount,
+      netScore: result.upvoteCount - result.downvoteCount,
+      message: result.message,
+    });
   } catch (error) {
-    console.error("Error toggling upvote:", error);
+    console.error("Error toggling vote:", error);
+    
+    // Handle specific service errors
+    if (error instanceof Error) {
+      if (error.message === "Prompt not found") {
+        return NextResponse.json({ error: error.message }, { status: 404 });
+      }
+    }
+
     return NextResponse.json(
-      { error: "Failed to toggle upvote" },
+      { error: "Failed to toggle vote" },
       { status: 500 }
     );
   }

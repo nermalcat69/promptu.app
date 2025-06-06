@@ -72,9 +72,19 @@ export function PromptFilters({ onFiltersChange, initialFilters }: PromptFilters
       sort: searchParams.get('sort') || 'recent',
       category: searchParams.get('category') || 'all',
     };
-    setFilters(newFilters);
-    onFiltersChange?.(newFilters);
-  }, [searchParams, onFiltersChange]);
+    
+    // Only update if filters actually changed
+    const hasChanged = 
+      newFilters.search !== filters.search ||
+      newFilters.type !== filters.type ||
+      newFilters.sort !== filters.sort ||
+      newFilters.category !== filters.category;
+    
+    if (hasChanged) {
+      setFilters(newFilters);
+      onFiltersChange?.(newFilters);
+    }
+  }, [searchParams, onFiltersChange, filters]);
 
   return (
     <div className="space-y-4">

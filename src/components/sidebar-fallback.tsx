@@ -1,18 +1,64 @@
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Star } from "lucide-react";
 import Link from "next/link";
-import { getTrendingService, getCommunityStatsService } from "@/services/ServiceFactory";
+import { useEffect, useState } from "react";
 
-export async function Sidebar() {
-  // Use services to get real data
-  const trendingService = getTrendingService();
-  const communityStatsService = getCommunityStatsService();
+interface TrendingPrompt {
+  id: string;
+  title: string;
+  slug: string;
+  upvotes: number | null;
+}
 
-  const [trendingPrompts, stats] = await Promise.all([
-    trendingService.getTrendingPrompts(5, 'weekly'),
-    communityStatsService.getCommunityStats()
-  ]);
+interface CommunityStats {
+  totalPrompts: number;
+  activeUsers: number;
+  weeklyPrompts: number;
+  totalUpvotes: number;
+  totalCopies: number;
+}
+
+export function SidebarFallback() {
+  const [trendingPrompts, setTrendingPrompts] = useState<TrendingPrompt[]>([]);
+  const [stats, setStats] = useState<CommunityStats>({
+    totalPrompts: 0,
+    activeUsers: 0,
+    weeklyPrompts: 0,
+    totalUpvotes: 0,
+    totalCopies: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [trendingRes, statsRes] = await Promise.all([
+          fetch('/api/trending?limit=5&timeframe=weekly'),
+          fetch('/api/stats/community')
+        ]);
+
+        if (trendingRes.ok) {
+          const trendingData = await trendingRes.json();
+          setTrendingPrompts(trendingData.data || []);
+        }
+
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          setStats(statsData.data || stats);
+        }
+      } catch (error) {
+        console.error('Error fetching sidebar data:', error);
+        // Keep default values on error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -25,7 +71,19 @@ export async function Sidebar() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {trendingPrompts.length > 0 ? (
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex items-start gap-3 animate-pulse">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-200"></div>
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : trendingPrompts.length > 0 ? (
             trendingPrompts.map((prompt, index) => (
               <div key={prompt.id} className="flex items-start gap-3">
                 <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600">
@@ -68,8 +126,6 @@ export async function Sidebar() {
         </CardContent>
       </Card>
 
-
-
       {/* Quick Stats */}
       <Card>
         <CardHeader className="pb-2">
@@ -78,23 +134,33 @@ export async function Sidebar() {
         <CardContent className="space-y-2">
           <div className="flex justify-between items-center">
             <span className="text-xs text-gray-600">Total Prompts</span>
-            <span className="text-xs font-medium text-gray-900">{stats.totalPrompts.toLocaleString()}</span>
+            <span className="text-xs font-medium text-gray-900">
+              {loading ? "..." : stats.totalPrompts.toLocaleString()}
+            </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-xs text-gray-600">Active Users</span>
-            <span className="text-xs font-medium text-gray-900">{stats.activeUsers.toLocaleString()}</span>
+            <span className="text-xs font-medium text-gray-900">
+              {loading ? "..." : stats.activeUsers.toLocaleString()}
+            </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-xs text-gray-600">This Week</span>
-            <span className="text-xs font-medium text-green-600">+{stats.weeklyPrompts} prompts</span>
+            <span className="text-xs font-medium text-green-600">
+              {loading ? "..." : `+${stats.weeklyPrompts} prompts`}
+            </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-xs text-gray-600">Total Upvotes</span>
-            <span className="text-xs font-medium text-blue-600">{stats.totalUpvotes.toLocaleString()}</span>
+            <span className="text-xs font-medium text-blue-600">
+              {loading ? "..." : stats.totalUpvotes.toLocaleString()}
+            </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-xs text-gray-600">Total Copies</span>
-            <span className="text-xs font-medium text-purple-600">{stats.totalCopies.toLocaleString()}</span>
+            <span className="text-xs font-medium text-purple-600">
+              {loading ? "..." : stats.totalCopies.toLocaleString()}
+            </span>
           </div>
         </CardContent>
       </Card>

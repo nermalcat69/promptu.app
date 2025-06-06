@@ -10,8 +10,14 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Eye, Save, Send } from "lucide-react";
+import { Eye, Save, Send, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { 
+  validatePromptContent, 
+  getFieldCharacterCount, 
+  formatValidationErrorMessage,
+  PROMPT_VALIDATION_RULES 
+} from "@/lib/validations/prompt-validation";
 
 export function PromptSubmissionForm() {
   const [formData, setFormData] = useState({
@@ -25,6 +31,7 @@ export function PromptSubmissionForm() {
 
   const [preview, setPreview] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
 
   const promptTypes = [
     { value: "system", label: "System Prompt", description: "Instructions that set AI behavior and context" },
@@ -37,13 +44,34 @@ export function PromptSubmissionForm() {
     "Education", "Research", "Customer Service", "Content Creation"
   ];
 
+  const validateForm = () => {
+    const validation = validatePromptContent({
+      title: formData.title,
+      description: formData.excerpt,
+      content: formData.content,
+    });
+
+    const errors: {[key: string]: string} = {};
+    validation.errors.forEach(error => {
+      errors[error.field] = formatValidationErrorMessage(error);
+    });
+
+    // Additional required field validation
+    if (!formData.promptType) {
+      errors.promptType = "Please select a prompt type";
+    }
+
+    setValidationErrors(errors);
+    return validation.isValid && !errors.promptType;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Validate required fields
-    if (!formData.title || !formData.excerpt || !formData.content || !formData.promptType) {
-      toast.error("Please fill in all required fields");
+    // Validate form
+    if (!validateForm()) {
+      toast.error("Please fix the validation errors before submitting");
       setIsLoading(false);
       return;
     }
@@ -134,13 +162,33 @@ export function PromptSubmissionForm() {
             id="title"
             placeholder="e.g., Professional Email Writer Assistant"
             value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className="mt-1"
+            onChange={(e) => {
+              setFormData({ ...formData, title: e.target.value });
+              // Clear validation error when user starts typing
+              if (validationErrors.title) {
+                setValidationErrors(prev => ({ ...prev, title: '' }));
+              }
+            }}
+            className={`mt-1 ${validationErrors.title ? 'border-red-500' : ''}`}
+            maxLength={PROMPT_VALIDATION_RULES.title.maxLength}
             required
           />
-          <p className="text-sm text-gray-500 mt-1">
-            Choose a clear, descriptive title that explains what your prompt does
-          </p>
+          <div className="flex justify-between items-start mt-1">
+            <p className="text-sm text-gray-500">
+              Choose a clear, descriptive title ({PROMPT_VALIDATION_RULES.title.minLength}-{PROMPT_VALIDATION_RULES.title.maxLength} characters)
+            </p>
+            <span className={`text-xs ${
+              getFieldCharacterCount(formData.title, 'title').isValid ? 'text-gray-500' : 'text-red-500'
+            }`}>
+              {formData.title.trim().length}/{PROMPT_VALIDATION_RULES.title.maxLength}
+            </span>
+          </div>
+          {validationErrors.title && (
+            <div className="flex items-center gap-1 mt-1">
+              <AlertCircle className="h-4 w-4 text-red-500" />
+              <p className="text-sm text-red-500">{validationErrors.title}</p>
+            </div>
+          )}
         </div>
 
         <div>
@@ -151,14 +199,33 @@ export function PromptSubmissionForm() {
             id="excerpt"
             placeholder="A brief description of what this prompt does and how it helps users..."
             value={formData.excerpt}
-            onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
-            className="mt-1 min-h-[80px]"
-            maxLength={200}
+            onChange={(e) => {
+              setFormData({ ...formData, excerpt: e.target.value });
+              // Clear validation error when user starts typing
+              if (validationErrors.description) {
+                setValidationErrors(prev => ({ ...prev, description: '' }));
+              }
+            }}
+            className={`mt-1 min-h-[80px] ${validationErrors.description ? 'border-red-500' : ''}`}
+            maxLength={PROMPT_VALIDATION_RULES.description.maxLength}
             required
           />
-          <p className="text-sm text-gray-500 mt-1">
-            {formData.excerpt.length}/200 characters - This will be shown in the prompt card
-          </p>
+          <div className="flex justify-between items-start mt-1">
+            <p className="text-sm text-gray-500">
+              Minimum {PROMPT_VALIDATION_RULES.description.minLength} characters - This will be shown in the prompt card
+            </p>
+            <span className={`text-xs ${
+              getFieldCharacterCount(formData.excerpt, 'description').isValid ? 'text-gray-500' : 'text-red-500'
+            }`}>
+              {formData.excerpt.trim().length}/{PROMPT_VALIDATION_RULES.description.maxLength}
+            </span>
+          </div>
+          {validationErrors.description && (
+            <div className="flex items-center gap-1 mt-1">
+              <AlertCircle className="h-4 w-4 text-red-500" />
+              <p className="text-sm text-red-500">{validationErrors.description}</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -171,7 +238,13 @@ export function PromptSubmissionForm() {
         </Label>
         <RadioGroup
           value={formData.promptType}
-          onValueChange={(value) => setFormData({ ...formData, promptType: value })}
+          onValueChange={(value) => {
+            setFormData({ ...formData, promptType: value });
+            // Clear validation error when user selects
+            if (validationErrors.promptType) {
+              setValidationErrors(prev => ({ ...prev, promptType: '' }));
+            }
+          }}
           className="space-y-3"
         >
           {promptTypes.map((type) => (
@@ -186,6 +259,12 @@ export function PromptSubmissionForm() {
             </div>
           ))}
         </RadioGroup>
+        {validationErrors.promptType && (
+          <div className="flex items-center gap-1 mt-2">
+            <AlertCircle className="h-4 w-4 text-red-500" />
+            <p className="text-sm text-red-500">{validationErrors.promptType}</p>
+          </div>
+        )}
       </div>
 
       <Separator />
@@ -270,13 +349,33 @@ export function PromptSubmissionForm() {
           id="content"
           placeholder="Enter your complete prompt here. Be as detailed as possible to help others understand how to use it effectively..."
           value={formData.content}
-          onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-          className="mt-1 min-h-[200px] font-mono text-sm"
+          onChange={(e) => {
+            setFormData({ ...formData, content: e.target.value });
+            // Clear validation error when user starts typing
+            if (validationErrors.content) {
+              setValidationErrors(prev => ({ ...prev, content: '' }));
+            }
+          }}
+          className={`mt-1 min-h-[200px] font-mono text-sm ${validationErrors.content ? 'border-red-500' : ''}`}
+          maxLength={PROMPT_VALIDATION_RULES.content.maxLength}
           required
         />
-        <p className="text-sm text-gray-500 mt-1">
-          Include the full prompt text, any variables that need to be replaced, and usage instructions
-        </p>
+        <div className="flex justify-between items-start mt-1">
+          <p className="text-sm text-gray-500">
+            Minimum {PROMPT_VALIDATION_RULES.content.minLength} characters - Include usage instructions and examples
+          </p>
+          <span className={`text-xs ${
+            getFieldCharacterCount(formData.content, 'content').isValid ? 'text-gray-500' : 'text-red-500'
+          }`}>
+            {formData.content.trim().length}/{PROMPT_VALIDATION_RULES.content.maxLength}
+          </span>
+        </div>
+        {validationErrors.content && (
+          <div className="flex items-center gap-1 mt-1">
+            <AlertCircle className="h-4 w-4 text-red-500" />
+            <p className="text-sm text-red-500">{validationErrors.content}</p>
+          </div>
+        )}
       </div>
 
       {/* Preview */}

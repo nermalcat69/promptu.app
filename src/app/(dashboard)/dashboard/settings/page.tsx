@@ -411,19 +411,21 @@ export default function SettingsPage() {
                           <AlertTriangle className="h-5 w-5" />
                           Delete Account
                         </AlertDialogTitle>
-                        <AlertDialogDescription className="space-y-2">
-                          <p>
-                            Are you absolutely sure you want to delete your account? This action will:
-                          </p>
-                          <ul className="list-disc list-inside space-y-1 text-sm">
-                            <li>Permanently delete your profile and all personal data</li>
-                            <li>Remove all your prompts from the platform</li>
-                            <li>Delete all your upvotes and interactions</li>
-                            <li>Cannot be undone or recovered</li>
-                          </ul>
-                          <p className="font-medium text-red-600 mt-4">
-                            This action is irreversible.
-                          </p>
+                        <AlertDialogDescription asChild>
+                          <div className="space-y-2">
+                            <p>
+                              Are you absolutely sure you want to delete your account? This action will:
+                            </p>
+                            <ul className="list-disc list-inside space-y-1 text-sm">
+                              <li>Permanently delete your profile and all personal data</li>
+                              <li>Remove all your prompts from the platform</li>
+                              <li>Delete all your upvotes and interactions</li>
+                              <li>Cannot be undone or recovered</li>
+                            </ul>
+                            <p className="font-medium text-red-600 mt-4">
+                              This action is irreversible.
+                            </p>
+                          </div>
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
