@@ -150,4 +150,35 @@ export async function PUT(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// DELETE /api/user/profile - Delete current user's account
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
+    // Delete user account (cascade will handle related data)
+    await db
+      .delete(user)
+      .where(eq(user.id, session.user.id));
+
+    return NextResponse.json({
+      message: "Account deleted successfully"
+    });
+  } catch (error) {
+    console.error("Error deleting user account:", error);
+    return NextResponse.json(
+      { error: "Failed to delete account" },
+      { status: 500 }
+    );
+  }
 } 

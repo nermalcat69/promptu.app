@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "@/lib/auth-client";
+import { useSession, signOut } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,11 +9,24 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { User, Camera } from "lucide-react";
+import { User, Camera, Trash2, AlertTriangle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function SettingsPage() {
   const { data: session, isPending, error } = useSession();
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [sessionTimeout, setSessionTimeout] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -22,6 +35,7 @@ export default function SettingsPage() {
     website: "",
     image: ""
   });
+  const router = useRouter();
 
   // Debug session state
   useEffect(() => {
@@ -127,6 +141,35 @@ export default function SettingsPage() {
       toast.error("Failed to update profile");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    
+    try {
+      const response = await fetch("/api/user/profile", {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        toast.success("Account deleted successfully");
+        // Sign out and redirect to home
+        await signOut({
+          fetchOptions: {
+            onSuccess: () => {
+              router.push("/");
+            },
+          },
+        });
+      } else {
+        const error = await response.json();
+        toast.error(error.error || "Failed to delete account");
+      }
+    } catch (error) {
+      toast.error("Failed to delete account");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -325,6 +368,76 @@ export default function SettingsPage() {
                   <p className="text-sm text-gray-900">
                     {new Date().toLocaleDateString()} {/* This would be from the user data */}
                   </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Danger Zone */}
+          <Card className="border-red-200 bg-red-50">
+            <CardHeader>
+              <CardTitle className="text-lg text-red-800 flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                Danger Zone
+              </CardTitle>
+              <CardDescription className="text-red-700">
+                Irreversible and destructive actions
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-4 bg-white rounded-lg border border-red-200">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="font-medium text-gray-900 mb-1">Delete Account</h3>
+                    <p className="text-sm text-gray-600">
+                      Permanently delete your account and all associated data. This action cannot be undone.
+                    </p>
+                  </div>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        disabled={isDeleting}
+                        className="flex-shrink-0"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        {isDeleting ? "Deleting..." : "Delete Account"}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+                          <AlertTriangle className="h-5 w-5" />
+                          Delete Account
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="space-y-2">
+                          <p>
+                            Are you absolutely sure you want to delete your account? This action will:
+                          </p>
+                          <ul className="list-disc list-inside space-y-1 text-sm">
+                            <li>Permanently delete your profile and all personal data</li>
+                            <li>Remove all your prompts from the platform</li>
+                            <li>Delete all your upvotes and interactions</li>
+                            <li>Cannot be undone or recovered</li>
+                          </ul>
+                          <p className="font-medium text-red-600 mt-4">
+                            This action is irreversible.
+                          </p>
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleDeleteAccount}
+                          className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+                          disabled={isDeleting}
+                        >
+                          {isDeleting ? "Deleting..." : "Yes, Delete My Account"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             </CardContent>

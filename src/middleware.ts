@@ -4,8 +4,8 @@ const protectedRoutes = ["/dashboard"];
 const authRoutes = ["/sign-in", "/sign-up"];
 const onboardingRoute = "/onboarding";
 
-// ONBOARDING TEMPORARILY DISABLED - Uncomment sections below to re-enable
-const ONBOARDING_ENABLED = false;
+// Enable onboarding for new users
+const ONBOARDING_ENABLED = true;
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -32,8 +32,6 @@ export async function middleware(request: NextRequest) {
     
     // If user is authenticated but trying to access auth routes
     if (hasSession && authRoutes.some(route => pathname.startsWith(route))) {
-      // ONBOARDING DISABLED: Skip onboarding check for now
-      /* 
       if (ONBOARDING_ENABLED) {
         // Check if user needs onboarding before redirecting to dashboard
         try {
@@ -54,13 +52,10 @@ export async function middleware(request: NextRequest) {
           console.error("Error checking user profile for auth route redirect:", error);
         }
       }
-      */
       
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 
-    // ONBOARDING DISABLED: Skip onboarding redirect logic
-    /*
     if (ONBOARDING_ENABLED) {
       // Check if authenticated user needs onboarding (excluding onboarding page itself)
       if (hasSession && pathname !== onboardingRoute && !pathname.startsWith('/api/') && protectedRoutes.some(route => pathname.startsWith(route))) {
@@ -109,7 +104,6 @@ export async function middleware(request: NextRequest) {
         }
       }
     }
-    */
  
     return NextResponse.next();
   } catch (error) {

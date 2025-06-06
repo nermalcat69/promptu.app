@@ -7,7 +7,6 @@ import { JetBrains_Mono, Inter } from "next/font/google";
 import "@/styles/globals.css";
 import { cn } from "@/lib/utils";
 import RootProviders from "@/components/providers";
-import { Navigation } from "@/components/navigation";
 import { Toaster } from "@/components/ui/sonner";
 
 const fontSans = Inter({
@@ -39,18 +38,29 @@ export const metadata: Metadata = {
     title: "Promptu - Discover, Share & Find AI Prompts",
     description: "The ultimate marketplace for AI prompts. Find system prompts, user prompts, and developer prompts for all your AI needs.",
     siteName: "Promptu",
+    images: [
+      {
+        url: "https://promptu.app/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Promptu - AI Prompt Marketplace",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Promptu - Discover, Share & Find AI Prompts",
     description: "The ultimate marketplace for AI prompts. Find system prompts, user prompts, and developer prompts for all your AI needs.",
     creator: "@promptu_app",
+    images: ["https://promptu.app/og-image.png"],
   },
   icons: {
     icon: "/favicon.png",
     shortcut: "/favicon.png",
     apple: "/favicon.png",
   },
+  manifest: "/manifest.json",
+  metadataBase: new URL("https://promptu.app"),
 };
 
 export default function RootLayout({
@@ -70,6 +80,7 @@ export default function RootLayout({
       >
         <RootProviders>
           {children}
+          <Toaster />
         </RootProviders>
       </body>
     </html>

@@ -8,7 +8,7 @@ import { headers } from "next/headers";
 // GET /api/prompts/[slug]/upvote - Check if user has upvoted
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     const session = await auth.api.getSession({
@@ -19,7 +19,7 @@ export async function GET(
       return NextResponse.json({ upvoted: false });
     }
 
-    const promptSlug = params.slug;
+    const { slug: promptSlug } = await params;
 
     // Get prompt ID from slug
     const promptResult = await db
@@ -62,7 +62,7 @@ export async function GET(
 // POST /api/prompts/[slug]/upvote - Toggle upvote
 export async function POST(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     const session = await auth.api.getSession({
@@ -76,7 +76,7 @@ export async function POST(
       );
     }
 
-    const promptSlug = params.slug;
+    const { slug: promptSlug } = await params;
 
     // Get prompt ID from slug
     const promptResult = await db
