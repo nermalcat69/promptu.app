@@ -76,7 +76,7 @@ export function CopyButton({
       
       {showText && (
         <span className="ml-2">
-          {children || (copied ? "Copied!" : "Copy")}
+          {children || (copied ? "Copied prompt" : "Copy")}
         </span>
       )}
     </Button>

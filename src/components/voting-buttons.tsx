@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useSession } from "@/lib/auth-client";
 
 interface VotingButtonsProps {
   promptSlug: string;
@@ -28,6 +29,7 @@ export function VotingButtons({
   showCounts = true,
   upvoteOnly = false
 }: VotingButtonsProps) {
+  const { data: session, isPending } = useSession();
   const [voting, setVoting] = useState<VotingState>({
     upvoted: false,
     downvoted: false,
@@ -62,6 +64,19 @@ export function VotingButtons({
   }, [promptSlug]);
 
   const handleVote = async (type: "upvote" | "downvote") => {
+    // If session is still loading, prevent action
+    if (isPending) {
+      return;
+    }
+    
+    // Check authentication BEFORE doing anything
+    if (!session?.user) {
+      // Redirect to sign up immediately - no API call needed
+      window.location.href = '/signup';
+      return;
+    }
+
+    // Only proceed with API call if user is authenticated
     if (loading) return;
 
     setLoading(true);
@@ -126,7 +141,7 @@ export function VotingButtons({
               : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-green-50 hover:text-green-600 hover:border-green-300"
           )}
           onClick={handleUpvote}
-          disabled={loading}
+          disabled={loading || isPending}
           title={voting.upvoted ? "Remove upvote" : "Upvote this prompt"}
         >
           <ChevronUp size={iconSizes[size]} />
@@ -163,7 +178,7 @@ export function VotingButtons({
             : "text-gray-500 hover:text-green-600 hover:bg-green-50"
         )}
         onClick={() => handleVote("upvote")}
-        disabled={loading}
+        disabled={loading || isPending}
         title={voting.upvoted ? "Remove upvote" : "Upvote this prompt"}
       >
         <ChevronUp size={iconSizes[size]} />
@@ -206,7 +221,7 @@ export function VotingButtons({
             : "text-gray-500 hover:text-red-600 hover:bg-red-50"
         )}
         onClick={() => handleVote("downvote")}
-        disabled={loading}
+        disabled={loading || isPending}
         title={voting.downvoted ? "Remove downvote" : "Downvote this prompt"}
       >
         <ChevronDown size={iconSizes[size]} />

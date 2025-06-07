@@ -9,6 +9,7 @@ import { ChevronUp, Copy, Eye, User, MessageCircle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { calculatePromptTokens, formatTokenCount } from '@/lib/token-calculator'
 import { CopyButton } from '@/components/copy-button'
+import { UpvoteButton } from '@/components/upvote-button'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 
@@ -65,7 +66,7 @@ export default function PromptPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 lg:px-6 py-6">
+        <div className="max-w-5xl mx-auto px-4 lg:px-6 py-6">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Main Content Skeleton */}
             <div className="lg:col-span-3 space-y-6">
@@ -76,7 +77,13 @@ export default function PromptPage() {
                     <div className="h-8 w-3/4 bg-gray-200 rounded animate-pulse mb-2"></div>
                     <div className="h-4 w-full bg-gray-200 rounded animate-pulse"></div>
                   </div>
-                  <div className="h-6 w-16 bg-gray-200 rounded-full animate-pulse shrink-0"></div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="h-6 w-16 bg-gray-200 rounded-full animate-pulse"></div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-20 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-8 w-16 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Author and Meta Skeleton */}
@@ -103,14 +110,7 @@ export default function PromptPage() {
                 </div>
               </div>
 
-              {/* Actions Skeleton */}
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1">
-                  <div className="h-8 w-9 bg-gray-200 rounded animate-pulse"></div>
-                  <div className="h-4 w-8 bg-gray-200 rounded animate-pulse"></div>
-                </div>
-                <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
-              </div>
+
 
               {/* Content Skeleton */}
               <div className="bg-white rounded-lg border border-gray-200 p-8">
@@ -185,7 +185,7 @@ export default function PromptPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 lg:px-6 py-6">
+      <div className="max-w-5xl mx-auto px-4 lg:px-6 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-6">
@@ -200,12 +200,30 @@ export default function PromptPage() {
                     {prompt.excerpt}
                   </p>
                 </div>
-                <Badge 
-                  variant="outline" 
-                  className={`${getPromptTypeColor(prompt.promptType)} shrink-0`}
-                >
-                  {prompt.promptType}
-                </Badge>
+                <div className="flex items-center gap-3 shrink-0">
+                  <Badge 
+                    variant="outline" 
+                    className={`${getPromptTypeColor(prompt.promptType)}`}
+                  >
+                    {prompt.promptType}
+                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <UpvoteButton 
+                      promptSlug={prompt.slug}
+                      initialUpvotes={prompt.upvotes || 0}
+                      className="h-8"
+                    />
+
+                    <CopyButton 
+                      text={prompt.content}
+                      promptSlug={prompt.slug}
+                      className="bg-gray-900 hover:bg-gray-800 text-white"
+                      size="sm"
+                    >
+                      Copy
+                    </CopyButton>
+                  </div>
+                </div>
               </div>
 
               {/* Author and Meta */}
@@ -237,30 +255,6 @@ export default function PromptPage() {
                   <span className="font-mono">{formatTokenCount(tokens)}</span>
                 </div>
               </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="h-8 w-9 p-0 cursor-pointer border border-gray-300 hover:border-green-500 hover:bg-green-50 hover:text-green-700 transition-all duration-200"
-                >
-                  <ChevronUp className="h-4 w-4" />
-                </Button>
-                <span className="text-sm font-medium text-gray-900 min-w-[2.5rem] text-center">
-                  {prompt.upvotes || 0}
-                </span>
-              </div>
-
-              <CopyButton 
-                text={prompt.content}
-                promptSlug={prompt.slug}
-                className="bg-gray-900 hover:bg-gray-800 text-white"
-              >
-                Copy Prompt
-              </CopyButton>
             </div>
 
             {/* Content */}

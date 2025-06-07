@@ -12,7 +12,7 @@ interface UpvoteButtonProps {
 }
 
 export function UpvoteButton({ promptSlug, initialUpvotes, className }: UpvoteButtonProps) {
-  const { data: session } = useSession();
+  const { data: session, isPending } = useSession();
   const [upvoted, setUpvoted] = useState(false);
   const [upvotes, setUpvotes] = useState(initialUpvotes);
   const [loading, setLoading] = useState(false);
@@ -20,41 +20,49 @@ export function UpvoteButton({ promptSlug, initialUpvotes, className }: UpvoteBu
   // Check if user has upvoted this prompt
   useEffect(() => {
     if (session?.user) {
-      fetch(`/api/prompts/${promptSlug}/upvote`)
+      fetch(`/api/prompts/${promptSlug}/vote`)
         .then(res => res.json())
         .then(data => {
           if (data.upvoted !== undefined) {
             setUpvoted(data.upvoted);
+            setUpvotes(data.upvoteCount || initialUpvotes);
           }
         })
         .catch(console.error);
     }
-  }, [promptSlug, session]);
+  }, [promptSlug, session, initialUpvotes]);
 
   const handleUpvote = async () => {
+    // If session is still loading, prevent action
+    if (isPending) {
+      return;
+    }
+    
+    // Check authentication BEFORE doing anything
     if (!session?.user) {
-      // Redirect to sign in
-      window.location.href = '/sign-in';
+      // Redirect to sign up immediately - no API call needed
+      window.location.href = '/signup';
       return;
     }
 
+    // Only proceed with API call if user is authenticated
     if (loading) return;
 
     setLoading(true);
     
     try {
-      const response = await fetch(`/api/prompts/${promptSlug}/upvote`, {
+      const response = await fetch(`/api/prompts/${promptSlug}/vote`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ type: 'upvote' }),
       });
 
       if (response.ok) {
         const data = await response.json();
         setUpvoted(data.upvoted);
-        // Update local count optimistically
-        setUpvotes(prev => data.upvoted ? prev + 1 : prev - 1);
+        setUpvotes(data.upvoteCount);
       } else {
         const error = await response.json();
         console.error('Upvote error:', error.error);
@@ -72,7 +80,7 @@ export function UpvoteButton({ promptSlug, initialUpvotes, className }: UpvoteBu
         variant="outline" 
         size="sm" 
         onClick={handleUpvote}
-        disabled={loading}
+        disabled={loading || isPending}
         className={`h-7 w-8 p-0 cursor-pointer border transition-all duration-200 ${
           upvoted 
             ? 'border-green-500 bg-green-50 text-green-700' 
@@ -82,7 +90,7 @@ export function UpvoteButton({ promptSlug, initialUpvotes, className }: UpvoteBu
         <ChevronUp className="h-4 w-4" />
       </Button>
       <span className="text-sm font-medium text-gray-900 min-w-[1.5rem] text-center">
-        {upvotes || 0}
+        {upvotes || 0} {(upvotes || 0) === 1 ? 'upvote' : 'upvotes'}
       </span>
     </div>
   );
