@@ -91,7 +91,7 @@ export function SidebarFallback() {
                 <div className="flex-1 min-w-0">
                   <Link 
                     href={`/prompts/${prompt.slug}`}
-                    className="text-sm font-medium text-gray-900 hover:text-gray-700 line-clamp-2"
+                    className="text-xs font-medium text-gray-900 hover:text-gray-700 line-clamp-2"
                   >
                     {prompt.title}
                   </Link>

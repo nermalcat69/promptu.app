@@ -182,10 +182,111 @@ export default function PromptsPage() {
 
           {/* Prompts Grid */}
           {initialLoad ? (
-            <div className="flex justify-center py-12">
-              <div className="flex items-center gap-2">
-                <Loader2 className="h-6 w-6 animate-spin" />
-                <span className="text-gray-600">Loading prompts...</span>
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              {/* Desktop Table Header - Hidden on mobile/tablet */}
+              <div className="hidden lg:block border-b border-gray-200 bg-gray-50">
+                <div className="grid grid-cols-12 gap-4 px-4 py-3">
+                  <div className="col-span-5 h-4 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="col-span-2 h-4 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="col-span-1 h-4 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="col-span-2 h-4 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="col-span-2 h-4 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              </div>
+
+              {/* Medium Screen Table Header - Hidden on mobile and desktop */}
+              <div className="hidden md:block lg:hidden border-b border-gray-200 bg-gray-50">
+                <div className="grid grid-cols-10 gap-4 px-4 py-3">
+                  <div className="col-span-4 h-4 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="col-span-2 h-4 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="col-span-2 h-4 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="col-span-2 h-4 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              </div>
+
+              {/* Skeleton Rows */}
+              <div className="divide-y divide-gray-200">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                  <div key={i} className="animate-pulse">
+                    {/* Mobile Layout Skeleton */}
+                    <div className="block md:hidden p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          <div className="h-4 w-3/4 bg-gray-200 rounded mb-1"></div>
+                        </div>
+                        <div className="h-6 w-16 bg-gray-200 rounded-full"></div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="h-6 w-6 bg-gray-200 rounded-full"></div>
+                          <div className="h-4 w-20 bg-gray-200 rounded"></div>
+                        </div>
+                        
+                        <div className="flex items-center gap-3">
+                          <div className="h-4 w-12 bg-gray-200 rounded"></div>
+                          <div className="h-6 w-12 bg-gray-200 rounded"></div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-end">
+                        <div className="h-4 w-8 bg-gray-200 rounded"></div>
+                      </div>
+                    </div>
+
+                    {/* Medium Screen Layout Skeleton */}
+                    <div className="hidden md:grid lg:hidden grid-cols-10 gap-2 px-4 py-3">
+                      <div className="col-span-4 space-y-2">
+                        <div className="h-4 w-3/4 bg-gray-200 rounded"></div>
+                        <div className="h-4 w-16 bg-gray-200 rounded"></div>
+                      </div>
+                      
+                      <div className="col-span-2 flex items-center gap-2">
+                        <div className="h-6 w-6 bg-gray-200 rounded-full"></div>
+                        <div className="h-4 w-16 bg-gray-200 rounded"></div>
+                      </div>
+                      
+                      <div className="col-span-2">
+                        <div className="h-6 w-12 bg-gray-200 rounded"></div>
+                      </div>
+                      
+                      <div className="col-span-2">
+                        <div className="h-4 w-8 bg-gray-200 rounded"></div>
+                      </div>
+                    </div>
+
+                    {/* Desktop Layout Skeleton */}
+                    <div className="hidden lg:grid grid-cols-12 gap-4 px-4 py-3">
+                      <div className="col-span-5 flex items-center gap-3">
+                        <div className="flex-1 space-y-1">
+                          <div className="h-4 w-3/4 bg-gray-200 rounded"></div>
+                          <div className="h-3 w-full bg-gray-200 rounded"></div>
+                        </div>
+                        <div className="h-6 w-16 bg-gray-200 rounded-full"></div>
+                      </div>
+                      
+                      <div className="col-span-2 flex items-center gap-2">
+                        <div className="h-6 w-6 bg-gray-200 rounded-full"></div>
+                        <div className="space-y-1">
+                          <div className="h-4 w-16 bg-gray-200 rounded"></div>
+                          <div className="h-3 w-12 bg-gray-200 rounded"></div>
+                        </div>
+                      </div>
+                      
+                      <div className="col-span-1">
+                        <div className="h-4 w-12 bg-gray-200 rounded"></div>
+                      </div>
+                      
+                      <div className="col-span-2">
+                        <div className="h-6 w-12 bg-gray-200 rounded"></div>
+                      </div>
+                      
+                      <div className="col-span-2">
+                        <div className="h-4 w-8 bg-gray-200 rounded"></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           ) : promptsWithTokens.length === 0 ? (
@@ -416,4 +517,5 @@ export default function PromptsPage() {
       </div>
     </div>
   );
+} 
 } 

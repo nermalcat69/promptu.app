@@ -28,9 +28,15 @@ export function DashboardNavButtons() {
   return (
     <div className="flex items-center gap-3">
       <Button variant="outline" size="sm" asChild>
+        <Link href="/dashboard/create" className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          <span className="hidden sm:inline">Create</span>
+        </Link>
+      </Button>
+      <Button variant="outline" size="sm" asChild>
         <Link href="/dashboard/settings" className="flex items-center gap-2">
           <Settings className="h-4 w-4" />
-          <span>Settings</span>
+          <span className="hidden sm:inline">Settings</span>
         </Link>
       </Button>
     </div>

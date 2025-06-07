@@ -80,7 +80,7 @@ export default function RootLayout({
       >
         <RootProviders>
           {children}
-          <Toaster />
+          <Toaster position="bottom-right" />
         </RootProviders>
       </body>
     </html>

@@ -64,6 +64,7 @@ export const ENV_SETUP_GUIDE = {
     }
   },
   optional: {
+    REDIS_URL: "Redis connection string for caching (improves performance)",
     DISCORD_FEEDBACK_WEBHOOK_URL: "Discord webhook for feedback notifications",
     DISCORD_FEATURE_WEBHOOK_URL: "Discord webhook for feature request notifications", 
     NEXT_PUBLIC_GOOGLE_ANALYTICS_ID: "Google Analytics measurement ID",

@@ -2,13 +2,28 @@ import { db } from "@/lib/db";
 import { prompt, user, upvote } from "@/lib/db/schema";
 import { eq, gte, sql, desc, and } from "drizzle-orm";
 import { ICommunityStatsService, CommunityStats } from "../interfaces/ICommunityStatsService";
+import { cacheGet, cacheSet } from "@/lib/redis";
 
 export class CommunityStatsService implements ICommunityStatsService {
+  private readonly CACHE_TTL = 300; // 5 minutes cache
+  private readonly CACHE_KEYS = {
+    communityStats: 'community:stats',
+    engagementStats: 'community:engagement',
+    userActivity: (timeframe: string) => `community:user_activity:${timeframe}`,
+    promptStats: (timeframe: string) => `community:prompt_stats:${timeframe}`,
+  };
+
   /**
    * Get comprehensive community statistics
    */
   async getCommunityStats(): Promise<CommunityStats> {
     try {
+      // Try to get from cache first
+      const cached = await cacheGet(this.CACHE_KEYS.communityStats);
+      if (cached) {
+        return JSON.parse(cached);
+      }
+
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
@@ -72,7 +87,7 @@ export class CommunityStatsService implements ICommunityStatsService {
           .limit(5)
       ]);
 
-      return {
+      const stats: CommunityStats = {
         totalPrompts: totalPromptsResult[0]?.count || 0,
         activeUsers: activeUsersResult[0]?.count || 0,
         weeklyPrompts: weeklyPromptsResult[0]?.count || 0,
@@ -84,6 +99,11 @@ export class CommunityStatsService implements ICommunityStatsService {
           count: item.count
         }))
       };
+
+      // Cache the results
+      await cacheSet(this.CACHE_KEYS.communityStats, JSON.stringify(stats), this.CACHE_TTL);
+
+      return stats;
     } catch (error) {
       console.error('Error fetching community stats:', error);
       // Return default stats in case of error
@@ -108,6 +128,13 @@ export class CommunityStatsService implements ICommunityStatsService {
     returningUsers: number;
   }> {
     try {
+      // Try to get from cache first
+      const cacheKey = this.CACHE_KEYS.userActivity(timeframe);
+      const cached = await cacheGet(cacheKey);
+      if (cached) {
+        return JSON.parse(cached);
+      }
+
       let dateFilter: Date;
       const now = new Date();
 
@@ -137,11 +164,16 @@ export class CommunityStatsService implements ICommunityStatsService {
       const newUsers = newUsersResult[0]?.count || 0;
       const totalUsers = totalUsersResult[0]?.count || 0;
 
-      return {
+      const result = {
         newUsers,
         activeUsers: totalUsers,
         returningUsers: Math.max(0, totalUsers - newUsers)
       };
+
+      // Cache the results (shorter TTL for activity data)
+      await cacheSet(cacheKey, JSON.stringify(result), 180); // 3 minutes
+
+      return result;
     } catch (error) {
       console.error('Error fetching user activity:', error);
       return { newUsers: 0, activeUsers: 0, returningUsers: 0 };
@@ -158,6 +190,13 @@ export class CommunityStatsService implements ICommunityStatsService {
     byType: Record<string, number>;
   }> {
     try {
+      // Try to get from cache first
+      const cacheKey = this.CACHE_KEYS.promptStats(timeframe);
+      const cached = await cacheGet(cacheKey);
+      if (cached) {
+        return JSON.parse(cached);
+      }
+
       let dateFilter: Date;
       const now = new Date();
 
@@ -210,12 +249,17 @@ export class CommunityStatsService implements ICommunityStatsService {
         byType[item.type] = item.count;
       });
 
-      return {
+      const result = {
         totalCreated: totalResult[0]?.count || 0,
         published: publishedResult[0]?.count || 0,
         drafts: draftsResult[0]?.count || 0,
         byType
       };
+
+      // Cache the results
+      await cacheSet(cacheKey, JSON.stringify(result), this.CACHE_TTL);
+
+      return result;
     } catch (error) {
       console.error('Error fetching prompt stats:', error);
       return { totalCreated: 0, published: 0, drafts: 0, byType: {} };
@@ -236,6 +280,12 @@ export class CommunityStatsService implements ICommunityStatsService {
     } | null;
   }> {
     try {
+      // Try to get from cache first
+      const cached = await cacheGet(this.CACHE_KEYS.engagementStats);
+      if (cached) {
+        return JSON.parse(cached);
+      }
+
       const [totalsResult, mostUpvotedResult] = await Promise.all([
         // Total upvotes and copies
         db.select({
@@ -261,7 +311,7 @@ export class CommunityStatsService implements ICommunityStatsService {
       const totals = totalsResult[0];
       const mostUpvoted = mostUpvotedResult[0];
 
-      return {
+      const result = {
         totalUpvotes: totals?.totalUpvotes || 0,
         totalCopies: totals?.totalCopies || 0,
         averageUpvotesPerPrompt: totals?.totalPrompts > 0 
@@ -273,6 +323,11 @@ export class CommunityStatsService implements ICommunityStatsService {
           upvotes: mostUpvoted.upvotes || 0
         } : null
       };
+
+      // Cache the results
+      await cacheSet(this.CACHE_KEYS.engagementStats, JSON.stringify(result), this.CACHE_TTL);
+
+      return result;
     } catch (error) {
       console.error('Error fetching engagement stats:', error);
       return {

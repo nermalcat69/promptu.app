@@ -4,6 +4,38 @@ import { prompt, category, user } from "@/lib/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { cacheGet, cacheSet } from "@/lib/redis";
+
+// Simple in-memory cache for view tracking when Redis is not available
+const viewCache = new Map<string, number>();
+const CACHE_DURATION = 60 * 60 * 1000; // 1 hour in milliseconds
+
+function isRecentlyViewed(key: string): boolean {
+  const timestamp = viewCache.get(key);
+  if (!timestamp) return false;
+  
+  const now = Date.now();
+  if (now - timestamp > CACHE_DURATION) {
+    viewCache.delete(key);
+    return false;
+  }
+  
+  return true;
+}
+
+function markAsViewed(key: string): void {
+  viewCache.set(key, Date.now());
+  
+  // Clean up old entries periodically
+  if (viewCache.size > 1000) {
+    const now = Date.now();
+    for (const [k, timestamp] of viewCache.entries()) {
+      if (now - timestamp > CACHE_DURATION) {
+        viewCache.delete(k);
+      }
+    }
+  }
+}
 
 // GET /api/prompts/[slug] - Get single prompt with details
 export async function GET(
@@ -68,17 +100,48 @@ export async function GET(
       );
     }
 
-    // Increment view count (only if not the author)
+    // Increment view count (only if not the author and not recently viewed)
     if (!session || session.user.id !== promptData.author?.id) {
-      await db
-        .update(prompt)
-        .set({ 
-          views: sql`${prompt.views} + 1`,
-          updatedAt: new Date()
-        })
-        .where(eq(prompt.slug, promptSlug));
+      const viewCacheKey = `view:${promptSlug}:${session?.user?.id || request.ip || 'anonymous'}`;
       
-      promptData.views = Number(promptData.views) + 1;
+      // Check both Redis cache and in-memory cache
+      const [redisRecentlyViewed, memoryRecentlyViewed] = await Promise.all([
+        cacheGet(viewCacheKey),
+        Promise.resolve(isRecentlyViewed(viewCacheKey))
+      ]);
+      
+      const recentlyViewed = redisRecentlyViewed || memoryRecentlyViewed;
+      
+      if (!recentlyViewed) {
+        try {
+          // Increment in database
+          await db
+            .update(prompt)
+            .set({ 
+              views: sql`${prompt.views} + 1`,
+              updatedAt: new Date()
+            })
+            .where(eq(prompt.slug, promptSlug));
+          
+          // Update the returned data
+          promptData.views = Number(promptData.views) + 1;
+          
+          // Set cache to prevent duplicate views for 1 hour
+          await Promise.all([
+            cacheSet(viewCacheKey, '1', 3600), // Redis cache (may fail silently)
+            Promise.resolve(markAsViewed(viewCacheKey)) // In-memory cache (always works)
+          ]);
+          
+          console.log(`View tracked for prompt ${promptSlug}, new count: ${promptData.views}`);
+        } catch (dbError) {
+          console.error('Error incrementing view count:', dbError);
+          // Don't fail the request if view tracking fails
+        }
+      } else {
+        console.log(`View skipped for prompt ${promptSlug} - recently viewed`);
+      }
+    } else {
+      console.log(`View skipped for prompt ${promptSlug} - user is author`);
     }
 
     return NextResponse.json(promptData);

@@ -14,8 +14,18 @@ import Link from 'next/link'
 
 async function getPrompt(slug: string) {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'}/api/prompts/${slug}`, {
-      cache: 'no-store' // Always fetch fresh data
+    // Use window.location.origin in the browser, fallback for server-side rendering
+    const baseUrl = typeof window !== 'undefined' 
+      ? window.location.origin 
+      : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      
+    const response = await fetch(`${baseUrl}/api/prompts/${slug}`, {
+      cache: 'no-store', // Always fetch fresh data
+      // Add timestamp to ensure view tracking works
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
     });
     
     if (!response.ok) {
@@ -39,10 +49,12 @@ export default function PromptPage() {
 
   useEffect(() => {
     const loadPrompt = async () => {
+      console.log('Loading prompt:', slug);
       const promptData = await getPrompt(slug);
       if (!promptData) {
         notFound();
       }
+      console.log('Prompt loaded, views:', promptData.views);
       setPrompt(promptData);
       setLoading(false);
     };
@@ -52,10 +64,101 @@ export default function PromptPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading prompt...</p>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 lg:px-6 py-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Main Content Skeleton */}
+            <div className="lg:col-span-3 space-y-6">
+              {/* Header Skeleton */}
+              <div className="py-8">
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div className="flex-1">
+                    <div className="h-8 w-3/4 bg-gray-200 rounded animate-pulse mb-2"></div>
+                    <div className="h-4 w-full bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                  <div className="h-6 w-16 bg-gray-200 rounded-full animate-pulse shrink-0"></div>
+                </div>
+
+                {/* Author and Meta Skeleton */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 bg-gray-200 rounded-full animate-pulse"></div>
+                    <div>
+                      <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-1"></div>
+                      <div className="h-3 w-20 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1">
+                      <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-4 w-6 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="h-4 w-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-4 w-6 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                    <div className="h-4 w-12 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions Skeleton */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <div className="h-8 w-9 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-4 w-8 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+                <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+
+              {/* Content Skeleton */}
+              <div className="bg-white rounded-lg border border-gray-200 p-8">
+                <div className="space-y-3">
+                  <div className="h-4 w-full bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-4 w-full bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-4 w-3/4 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-4 w-full bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-4 w-5/6 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Sidebar Skeleton */}
+            <div className="lg:col-span-1 space-y-6">
+              {/* Profile Card Skeleton */}
+              <div className="bg-card text-card-foreground rounded-xl border p-4">
+                <div className="mb-2">
+                  <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 bg-gray-200 rounded-full animate-pulse"></div>
+                    <div className="flex-1">
+                      <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-1"></div>
+                      <div className="h-3 w-16 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                  </div>
+                  <div className="h-3 w-32 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-10 w-full bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              </div>
+
+              {/* Discord Card Skeleton */}
+              <div className="bg-card text-card-foreground rounded-xl border p-4">
+                <div className="mb-2">
+                  <div className="h-4 w-36 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <div className="h-4 w-full bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-4 w-3/4 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                  <div className="h-10 w-full bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -217,16 +320,6 @@ export default function PromptPage() {
                 <p className="text-sm text-gray-600">
                   Connect with other prompt creators, share ideas, and get feedback on your prompts.
                 </p>
-                <div className="space-y-2 text-xs text-gray-500">
-                  <div className="flex justify-between items-center">
-                    <span>Members</span>
-                    <span className="font-medium text-gray-900">2,400+</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Online Now</span>
-                    <span className="font-medium text-green-600">180+</span>
-                  </div>
-                </div>
                 <Button asChild className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white">
                   <Link href="https://discord.gg/your-server" target="_blank" rel="noopener noreferrer">
                     Join Discord

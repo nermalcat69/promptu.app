@@ -56,8 +56,8 @@ export function UserProfile({ className }: { className?: string }) {
 
   if (isPending) {
     return (
-      <div className="size-10 md:size-14 aspect-square flex items-center justify-center p-3">
-        <div className="size-4 md:size-8 rounded-full bg-muted/50 animate-pulse"></div>
+      <div className="h-9 w-9 flex items-center justify-center">
+        <div className="h-8 w-8 rounded-full bg-muted/50 animate-pulse"></div>
       </div>
     );
   }
@@ -69,10 +69,16 @@ export function UserProfile({ className }: { className?: string }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className={cn("size-14 aspect-square p-2 md:p-3", signingOut && "animate-pulse", className)} asChild>
-          <Avatar>
-            <AvatarImage src={session.user.image ?? ""} alt={session.user.name ?? ""} className="rounded-full" />
-            <AvatarFallback className="rounded-full">{session.user.name?.charAt(0)}</AvatarFallback>
+        <Button variant="ghost" className={cn("h-9 w-9 p-0", signingOut && "animate-pulse", className)}>
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={session.user.image ?? ""} alt={session.user.name ?? ""} />
+            <AvatarFallback className="bg-gray-100">
+              {session.user.image ? (
+                session.user.name?.charAt(0) || "U"
+              ) : (
+                <User className="h-4 w-4 text-gray-600" />
+              )}
+            </AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
@@ -86,9 +92,15 @@ export function UserProfile({ className }: { className?: string }) {
                 <p className="text-xs text-blue-600">@{username}</p>
               )}
             </div>
-            <Avatar className="size-8">
-              <AvatarImage src={session.user.image ?? ""} alt={session.user.name ?? ""} className="rounded-full" />
-              <AvatarFallback className="rounded-full">{session.user.name?.charAt(0)}</AvatarFallback>
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={session.user.image ?? ""} alt={session.user.name ?? ""} />
+              <AvatarFallback className="bg-gray-100">
+                {session.user.image ? (
+                  session.user.name?.charAt(0) || "U"
+                ) : (
+                  <User className="h-5 w-5 text-gray-600" />
+                )}
+              </AvatarFallback>
             </Avatar>
           </div>
         </div>
@@ -120,9 +132,9 @@ export function UserProfile({ className }: { className?: string }) {
         <DropdownMenuSeparator />
         
         <DropdownMenuItem className="cursor-pointer" asChild>
-          <Link href="/dashboard/add-prompt" className="flex items-center gap-2">
+          <Link href="/dashboard/create" className="flex items-center gap-2">
             <Plus className="size-4" />
-            <span>Add Prompt</span>
+            <span>Create Prompt</span>
           </Link>
         </DropdownMenuItem>
         

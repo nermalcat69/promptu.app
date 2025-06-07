@@ -134,7 +134,24 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, excerpt, content, promptType, categoryId, slug, tags } = body;
+    const { title, excerpt, content, promptType, categoryId, slug, tags, published = true } = body;
+
+    // Handle category lookup if category name is provided instead of ID
+    let finalCategoryId = categoryId;
+    if (typeof categoryId === 'string' && categoryId && !/^[0-9a-f-]+$/.test(categoryId)) {
+      // If categoryId looks like a name/slug, try to find the category
+      const categoryResult = await db
+        .select({ id: category.id })
+        .from(category)
+        .where(eq(category.name, categoryId))
+        .limit(1);
+      
+      if (categoryResult[0]) {
+        finalCategoryId = categoryResult[0].id;
+      } else {
+        finalCategoryId = null; // Category not found, set to null
+      }
+    }
 
     // Validate content using our validation utility
     const validation = validatePromptContent({
@@ -202,13 +219,13 @@ export async function POST(request: NextRequest) {
         excerpt,
         content,
         promptType,
-        categoryId,
+        categoryId: finalCategoryId,
         authorId: session.user.id,
         upvotes: 0,
         views: 0,
         copyCount: 0,
         featured: false,
-        published: true,
+        published: published,
         createdAt: new Date(),
         updatedAt: new Date(),
       })

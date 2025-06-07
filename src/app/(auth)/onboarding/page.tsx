@@ -195,8 +195,12 @@ export default function OnboardingPage() {
                 <div className="text-center">
                   <Avatar className="h-24 w-24 mx-auto mb-4">
                     <AvatarImage src={session.user.image || ""} alt={session.user.name || ""} />
-                    <AvatarFallback className="text-xl">
-                      {session.user.name?.split(' ').map(n => n[0]).join('')}
+                    <AvatarFallback className="bg-gray-100 text-xl">
+                      {session.user.image ? (
+                        session.user.name?.split(' ').map(n => n[0]).join('')
+                      ) : (
+                        <User className="h-12 w-12 text-gray-600" />
+                      )}
                     </AvatarFallback>
                   </Avatar>
                   <p className="text-sm text-gray-600">

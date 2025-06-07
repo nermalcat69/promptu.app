@@ -26,6 +26,7 @@ export function PromptSubmissionForm() {
     content: "",
     promptType: "",
     category: "",
+    slug: "",
     tags: [] as string[],
   });
 
@@ -44,6 +45,30 @@ export function PromptSubmissionForm() {
     "Education", "Research", "Customer Service", "Content Creation"
   ];
 
+  // Function to generate slug from title
+  const generateSlug = (title: string) => {
+    return title
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-') // Replace multiple hyphens with single
+      .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
+  };
+
+  // Auto-generate slug when title changes
+  const handleTitleChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      title: value,
+      slug: generateSlug(value)
+    }));
+    // Clear validation error when user starts typing
+    if (validationErrors.title) {
+      setValidationErrors(prev => ({ ...prev, title: '' }));
+    }
+  };
+
   const validateForm = () => {
     const validation = validatePromptContent({
       title: formData.title,
@@ -61,8 +86,16 @@ export function PromptSubmissionForm() {
       errors.promptType = "Please select a prompt type";
     }
 
+    if (!formData.slug) {
+      errors.slug = "URL slug is required";
+    } else if (!/^[a-z0-9-]+$/.test(formData.slug)) {
+      errors.slug = "Slug can only contain lowercase letters, numbers, and hyphens";
+    } else if (formData.slug.length < 3) {
+      errors.slug = "Slug must be at least 3 characters long";
+    }
+
     setValidationErrors(errors);
-    return validation.isValid && !errors.promptType;
+    return validation.isValid && !errors.promptType && !errors.slug;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -88,6 +121,7 @@ export function PromptSubmissionForm() {
           content: formData.content,
           promptType: formData.promptType,
           categoryId: formData.category || null,
+          slug: formData.slug,
           tags: formData.tags,
         }),
       });
@@ -102,10 +136,11 @@ export function PromptSubmissionForm() {
           content: "",
           promptType: "",
           category: "",
+          slug: "",
           tags: [],
         });
         // Redirect to the new prompt
-        window.location.href = `/prompts/${data.prompt.id}`;
+        window.location.href = `/prompts/${data.prompt.slug}`;
       } else {
         const errorData = await response.json();
         toast.error(errorData.error || "Failed to publish prompt");
@@ -132,6 +167,7 @@ export function PromptSubmissionForm() {
           content: formData.content,
           promptType: formData.promptType,
           categoryId: formData.category || null,
+          slug: formData.slug,
           tags: formData.tags,
           published: false, // Save as draft
         }),
@@ -163,11 +199,7 @@ export function PromptSubmissionForm() {
             placeholder="e.g., Professional Email Writer Assistant"
             value={formData.title}
             onChange={(e) => {
-              setFormData({ ...formData, title: e.target.value });
-              // Clear validation error when user starts typing
-              if (validationErrors.title) {
-                setValidationErrors(prev => ({ ...prev, title: '' }));
-              }
+              handleTitleChange(e.target.value);
             }}
             className={`mt-1 ${validationErrors.title ? 'border-red-500' : ''}`}
             maxLength={PROMPT_VALIDATION_RULES.title.maxLength}
@@ -187,6 +219,40 @@ export function PromptSubmissionForm() {
             <div className="flex items-center gap-1 mt-1">
               <AlertCircle className="h-4 w-4 text-red-500" />
               <p className="text-sm text-red-500">{validationErrors.title}</p>
+            </div>
+          )}
+        </div>
+
+        <div>
+          <Label htmlFor="slug" className="text-base font-medium">
+            URL Slug *
+          </Label>
+          <Input
+            id="slug"
+            placeholder="e.g., professional-email-writer"
+            value={formData.slug}
+            onChange={(e) => {
+              setFormData({ ...formData, slug: e.target.value });
+              // Clear validation error when user starts typing
+              if (validationErrors.slug) {
+                setValidationErrors(prev => ({ ...prev, slug: '' }));
+              }
+            }}
+            className={`mt-1 font-mono text-sm ${validationErrors.slug ? 'border-red-500' : ''}`}
+            required
+          />
+          <div className="flex justify-between items-start mt-1">
+            <p className="text-sm text-gray-500">
+              This will be your prompt's URL: /prompts/{formData.slug || 'your-slug'}
+            </p>
+            <span className="text-xs text-gray-500">
+              {formData.slug.length} chars
+            </span>
+          </div>
+          {validationErrors.slug && (
+            <div className="flex items-center gap-1 mt-1">
+              <AlertCircle className="h-4 w-4 text-red-500" />
+              <p className="text-sm text-red-500">{validationErrors.slug}</p>
             </div>
           )}
         </div>

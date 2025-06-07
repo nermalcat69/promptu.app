@@ -69,7 +69,7 @@ export default async function DashboardPage() {
 
 	return (
 		<div className="min-h-screen bg-gray-50">
-			<div className="max-w-5xl mx-auto px-4 lg:px-6 py-4">
+			<div className="max-w-4xl mx-auto px-4 lg:px-6 py-4">
 				<div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6">
 					{/* Main Content */}
 					<div className="lg:col-span-3 order-2 lg:order-1">
@@ -77,19 +77,13 @@ export default async function DashboardPage() {
 							{/* Header */}
 							<div className="flex items-center justify-between">
 								<div>
-									<h1 className="text-2xl font-bold text-gray-900 mb-1">
+									<h1 className="text-xl font-bold text-gray-900 mb-1">
 										Welcome back, {user.name.split(' ')[0]}!
 									</h1>
 									<p className="text-gray-600 text-sm">
 										You have {userPrompts.length} prompt{userPrompts.length !== 1 ? 's' : ''} in total
 									</p>
 								</div>
-								<Button asChild className="bg-gray-900 hover:bg-gray-800 text-white">
-									<Link href="/dashboard/add-prompt">
-										<Plus className="h-4 w-4 mr-2" />
-										Add Prompt
-									</Link>
-								</Button>
 							</div>
 
 
@@ -108,7 +102,7 @@ export default async function DashboardPage() {
 											Get started by creating your first AI prompt.
 										</p>
 										<Button asChild className="bg-gray-900 hover:bg-gray-800 text-white">
-											<Link href="/dashboard/add-prompt">
+											<Link href="/dashboard/create">
 												Create your first prompt
 											</Link>
 										</Button>
@@ -117,7 +111,7 @@ export default async function DashboardPage() {
 							) : (
 								<div className="space-y-4">
 									<div className="flex items-center justify-between">
-										<h2 className="text-lg font-semibold text-gray-900">Your Prompts</h2>
+										<h2 className="text-md font-semibold text-gray-900">Your Prompts</h2>
 										<div className="flex items-center gap-2 text-xs text-gray-600">
 											<span>{publishedPrompts.length} published</span>
 											<span>•</span>
@@ -128,8 +122,8 @@ export default async function DashboardPage() {
 									<div className="space-y-3">
 										{userPrompts.map((userPrompt) => (
 											<Card key={userPrompt.id} className="hover:bg-gray-50 transition-colors">
-												<CardContent className="pt-4 pb-4">
-													<div className="flex items-start justify-between gap-3 mb-2">
+												<CardContent className="pt-1 pb-1">
+													<div className="flex items-start justify-between gap-3 mb-1">
 														<h3 className="font-medium text-gray-900 leading-tight">
 															<Link 
 																href={`/prompts/${userPrompt.slug}`}
@@ -138,7 +132,7 @@ export default async function DashboardPage() {
 																{userPrompt.title}
 															</Link>
 														</h3>
-														<div className="flex items-center gap-2">
+														<div className="flex items-center gap-1">
 															<Badge 
 																variant="outline" 
 																className={`${getPromptTypeColor(userPrompt.promptType)} text-xs`}
@@ -153,7 +147,7 @@ export default async function DashboardPage() {
 														</div>
 													</div>
 													
-													<p className="text-gray-600 text-sm mb-3 leading-relaxed line-clamp-2">
+													<p className="text-gray-600 text-xs leading-relaxed line-clamp-2">
 														{userPrompt.excerpt}
 													</p>
 													
@@ -201,8 +195,12 @@ export default async function DashboardPage() {
 									<div className="text-center space-y-2">
 										<Avatar className="h-12 w-12 mx-auto">
 											<AvatarImage src={user.image || ""} alt={user.name} />
-											<AvatarFallback className="text-sm">
-												{user.name.split(' ').map(n => n[0]).join('')}
+											<AvatarFallback className="bg-gray-100 text-sm">
+												{user.image ? (
+													user.name.split(' ').map(n => n[0]).join('')
+												) : (
+													<User className="h-6 w-6 text-gray-600" />
+												)}
 											</AvatarFallback>
 										</Avatar>
 										

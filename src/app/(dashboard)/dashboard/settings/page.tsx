@@ -242,8 +242,12 @@ export default function SettingsPage() {
                 <div className="flex flex-col items-center space-y-4">
                   <Avatar className="h-24 w-24">
                     <AvatarImage src={formData.image} alt={formData.name} />
-                    <AvatarFallback className="text-lg">
-                      {formData.name.split(' ').map(n => n[0]).join('')}
+                    <AvatarFallback className="bg-gray-100 text-lg">
+                      {formData.image ? (
+                        formData.name.split(' ').map(n => n[0]).join('')
+                      ) : (
+                        <User className="h-12 w-12 text-gray-600" />
+                      )}
                     </AvatarFallback>
                   </Avatar>
                   <div className="text-center">
