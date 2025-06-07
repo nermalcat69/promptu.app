@@ -76,7 +76,7 @@ export default function MarketingLayout({
       </header>
 
       {/* Main content */}
-      <main className="flex-1 w-full pt-2">
+      <main className="flex-1 w-full">
         {children}
       </main>
 
