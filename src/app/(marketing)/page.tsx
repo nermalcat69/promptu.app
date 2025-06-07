@@ -231,6 +231,7 @@ export default function Home() {
                                 promptSlug={prompt.slug}
                                 size="sm"
                                 showCounts={true}
+                                upvoteOnly={true}
                               />
                             </div>
                           </div>
@@ -282,8 +283,9 @@ export default function Home() {
                           <div className="col-span-2">
                             <VotingButtons 
                               promptSlug={prompt.slug}
-                              size="md"
+                              size="sm"
                               showCounts={true}
+                              upvoteOnly={true}
                             />
                           </div>
                           
@@ -349,8 +351,9 @@ export default function Home() {
                           <div className="col-span-2">
                             <VotingButtons 
                               promptSlug={prompt.slug}
-                              size="md"
+                              size="sm"
                               showCounts={true}
+                              upvoteOnly={true}
                             />
                           </div>
                           
@@ -402,16 +405,16 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <div className="flex flex-col sm:flex-row gap-3 pt-2 justify-center">
                     <a 
                       href="mailto:ads@promptu.app"
-                      className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-black hover:bg-gray-800 transition-colors"
+                      className="inline-flex items-center justify-center px-3 py-1.5 border border-transparent text-base font-medium rounded-md text-white bg-black hover:bg-gray-800 transition-colors"
                     >
                       Contact Us
                     </a>
                     <a 
                       href="/advertise"
-                      className="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                      className="inline-flex items-center justify-center px-3 py-1.5 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
                     >
                       Learn More
                     </a>

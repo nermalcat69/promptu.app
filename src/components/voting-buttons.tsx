@@ -10,6 +10,7 @@ interface VotingButtonsProps {
   className?: string;
   size?: "sm" | "md" | "lg";
   showCounts?: boolean;
+  upvoteOnly?: boolean;
 }
 
 interface VotingState {
@@ -24,7 +25,8 @@ export function VotingButtons({
   promptSlug, 
   className,
   size = "md",
-  showCounts = true
+  showCounts = true,
+  upvoteOnly = false
 }: VotingButtonsProps) {
   const [voting, setVoting] = useState<VotingState>({
     upvoted: false,
@@ -95,17 +97,57 @@ export function VotingButtons({
     }
   };
 
+  const handleUpvote = () => handleVote("upvote");
+
   const sizeClasses = {
-    sm: "h-6 w-6 text-xs",
-    md: "h-8 w-8 text-sm",
-    lg: "h-10 w-10 text-base",
+    sm: "h-8 w-8 text-xs",
+    md: "h-10 w-10 text-sm",
+    lg: "h-12 w-12 text-base",
   };
 
   const iconSizes = {
-    sm: 12,
-    md: 16,
-    lg: 20,
+    sm: 16,
+    md: 20,
+    lg: 24,
   };
+
+  // If upvoteOnly mode, return a simplified upvote button
+  if (upvoteOnly) {
+    return (
+      <div className={cn("flex items-center gap-2", className)}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn(
+            "transition-all duration-200 border rounded-md",
+            sizeClasses[size],
+            voting.upvoted
+              ? "bg-green-600 text-white border-green-700 hover:bg-green-700 shadow-md"
+              : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-green-50 hover:text-green-600 hover:border-green-300"
+          )}
+          onClick={handleUpvote}
+          disabled={loading}
+          title={voting.upvoted ? "Remove upvote" : "Upvote this prompt"}
+        >
+          <ChevronUp size={iconSizes[size]} />
+        </Button>
+
+        {/* Show count only if there are upvotes and showCounts is true */}
+        {showCounts && voting.upvoteCount > 0 && (
+          <span className="text-sm font-medium text-gray-700 min-w-[1.5rem]">
+            {voting.upvoteCount}
+          </span>
+        )}
+
+        {/* Error Display */}
+        {error && (
+          <div className="text-xs text-red-600 mt-1">
+            {error}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={cn("flex flex-col items-center gap-1", className)}>

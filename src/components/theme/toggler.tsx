@@ -53,9 +53,11 @@ export default function ThemeToggler({ className }: ThemeTogglerProps) {
 
   return (
     <Button
+      variant="outline"
+      size="icon"
       onClick={toggleTheme}
-      variant="ghost"
-      className={cn("size-14 aspect-square p-0", className)}
+      className={cn("cursor-pointer", className)}
+      aria-label="Toggle theme"
     >
       <SunIcon className="size-4 md:size-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
       <MoonIcon className="absolute size-4 md:size-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />

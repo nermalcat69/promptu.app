@@ -1,6 +1,5 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Star } from "lucide-react";
 import Link from "next/link";
@@ -63,14 +62,14 @@ export function SidebarFallback() {
   return (
     <div className="space-y-6">
       {/* Trending Prompts */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <TrendingUp className="h-7 w-7" />
+      <div className="bg-card text-card-foreground rounded-xl border p-4">
+        <div className="mb-2">
+          <div className="text-sm font-semibold flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
             Trending This Week
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
+          </div>
+        </div>
+        <div className="space-y-1">
           {loading ? (
             <div className="space-y-3">
               {[1, 2, 3, 4, 5].map((i) => (
@@ -97,7 +96,6 @@ export function SidebarFallback() {
                     {prompt.title}
                   </Link>
                   <div className="flex items-center gap-1 mt-1">
-                    <Star className="h-3 w-3 text-gray-400" />
                     <span className="text-xs text-gray-500">{prompt.upvotes || 0} upvotes</span>
                   </div>
                 </div>
@@ -106,15 +104,15 @@ export function SidebarFallback() {
           ) : (
             <p className="text-sm text-gray-500">No trending prompts yet.</p>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Prompt Guide */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">📚 Prompt Guide</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      <div className="bg-card text-card-foreground rounded-xl border p-4">
+        <div className="mb-2">
+          <div className="text-sm font-semibold">📚 Prompt Guide</div>
+        </div>
+        <div className="space-y-3">
           <p className="text-sm text-gray-600">
             Learn how to write effective AI prompts with our comprehensive guide.
           </p>
@@ -123,15 +121,15 @@ export function SidebarFallback() {
               View Guide
             </Link>
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Quick Stats */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Community Stats</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
+      <div className="bg-card text-card-foreground rounded-xl border p-4">
+        <div className="mb-2">
+          <div className="text-sm font-semibold">Community Stats</div>
+        </div>
+        <div className="space-y-2">
           <div className="flex justify-between items-center">
             <span className="text-xs text-gray-600">Total Prompts</span>
             <span className="text-xs font-medium text-gray-900">
@@ -162,8 +160,8 @@ export function SidebarFallback() {
               {loading ? "..." : stats.totalCopies.toLocaleString()}
             </span>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 } 

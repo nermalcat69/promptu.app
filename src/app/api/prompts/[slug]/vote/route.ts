@@ -53,9 +53,12 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    console.log("Vote API called");
     const session = await auth.api.getSession({
       headers: await headers(),
     });
+
+    console.log("Session:", session ? "authenticated" : "not authenticated");
 
     if (!session) {
       return NextResponse.json(
@@ -65,8 +68,11 @@ export async function POST(
     }
 
     const { slug: promptSlug } = await params;
+    console.log("Prompt slug:", promptSlug);
+    
     const body = await request.json();
     const { type } = body; // "upvote" or "downvote"
+    console.log("Vote type:", type);
 
     if (!type || !["upvote", "downvote"].includes(type)) {
       return NextResponse.json(

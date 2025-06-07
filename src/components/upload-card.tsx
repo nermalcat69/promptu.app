@@ -9,12 +9,14 @@ interface UploadCardProps {
   title: string;
   description: string;
   acceptedFormats?: string;
+  className?: string;
 }
 
 export function UploadCard({
   title,
   description,
   acceptedFormats = ".csv",
+  className,
 }: UploadCardProps) {
   const [fileName, setFileName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -33,10 +35,13 @@ export function UploadCard({
   };
 
   return (
-    <div className={cn(
-      "w-full border border-neutral-200 rounded-lg p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/50 hover:bg-white transition-colors",
-      fileName && "border-green-200 bg-green-50/50"
-    )}>
+    <div 
+      className={cn(
+        "w-full border border-neutral-200 rounded-lg p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/50 hover:bg-white transition-colors",
+        fileName && "border-green-200 bg-green-50/50",
+        className
+      )}
+    >
       <div className="flex items-start gap-3">
         <div className={cn(
           "p-2 rounded-md flex items-center justify-center", 
