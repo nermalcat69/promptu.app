@@ -137,7 +137,7 @@ export function SidebarFallback() {
             </span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-xs text-gray-600">Active Users</span>
+            <span className="text-xs text-gray-600">Total Users</span>
             <span className="text-xs font-medium text-gray-900">
               {loading ? "..." : stats.activeUsers.toLocaleString()}
             </span>

@@ -1,0 +1,35 @@
+zerops:
+  - setup: app
+    build:
+      base: nodejs@22
+      envVariables:
+        DATABASE_URL: ${db_connectionString}/${db_hostname}
+        REDIS_URL: redis://redis:6379
+        NEXT_PUBLIC_APP_URL: ${app_url}
+        BETTER_AUTH_SECRET=meMg/OW/kvEtOsjAj6GBMOlFmG/Slho5QmjwKlHVSBw=
+        BETTER_AUTH_URL=http://localhost:3000/api/auth
+        GOOGLE_CLIENT_ID=957415081012-872o6bukmh5efvo85b83ojcf37892l0p.apps.googleusercontent.com
+        GOOGLE_CLIENT_SECRET=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
+        GITHUB_CLIENT_ID=Ov23liC0k3P1AcrUMEyd
+        GITHUB_CLIENT_SECRET=fb4a14fe91c9185f736fd814fbd41cad8ac9f787
+      buildCommands:
+        - pnpm i
+        - pnpm build
+        - pnpm run db:generate
+      deployFiles: ./
+    run:
+      base: nodejs@22
+      envVariables:
+        DATABASE_URL: ${db_connectionString}/${db_hostname}
+        REDIS_URL: redis://redis:6379
+        NEXT_PUBLIC_APP_URL: ${app_url}
+        BETTER_AUTH_SECRET=meMg/OW/kvEtOsjAj6GBMOlFmG/Slho5QmjwKlHVSBw=
+        BETTER_AUTH_URL=http://localhost:3000/api/auth
+        GOOGLE_CLIENT_ID=957415081012-872o6bukmh5efvo85b83ojcf37892l0p.apps.googleusercontent.com
+        GOOGLE_CLIENT_SECRET=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
+        GITHUB_CLIENT_ID=Ov23liC0k3P1AcrUMEyd
+        GITHUB_CLIENT_SECRET=fb4a14fe91c9185f736fd814fbd41cad8ac9f787
+      ports:
+        - port: 3000
+          httpSupport: true
+      start: pnpm start

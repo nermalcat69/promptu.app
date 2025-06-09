@@ -45,7 +45,7 @@ export class CommunityStatsService implements ICommunityStatsService {
           .from(prompt)
           .where(eq(prompt.published, true)),
 
-        // Total active users
+        // Total users (all registered users)
         db.select({ count: sql<number>`count(*)` })
           .from(user),
 
