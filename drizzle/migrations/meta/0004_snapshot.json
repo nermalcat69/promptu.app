@@ -1,5 +1,5 @@
 {
-  "id": "9f5cc135-648c-4f55-91fe-b8d5f961142e",
+  "id": "f4f5b0c2-5583-413a-ae1d-49df2d30df38",
   "prevId": "a3b35659-9b2c-4b22-8458-1e0bcc748cec",
   "version": "7",
   "dialect": "postgresql",
@@ -166,70 +166,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.downvote": {
-      "name": "downvote",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "prompt_id": {
-          "name": "prompt_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "downvote_prompt_id_prompt_id_fk": {
-          "name": "downvote_prompt_id_prompt_id_fk",
-          "tableFrom": "downvote",
-          "tableTo": "prompt",
-          "columnsFrom": [
-            "prompt_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "downvote_user_id_user_id_fk": {
-          "name": "downvote_user_id_user_id_fk",
-          "tableFrom": "downvote",
-          "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.prompt": {
       "name": "prompt",
       "schema": "",
@@ -284,13 +220,6 @@
         },
         "upvotes": {
           "name": "upvotes",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "default": 0
-        },
-        "downvotes": {
-          "name": "downvotes",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,

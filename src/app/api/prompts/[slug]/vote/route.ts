@@ -21,9 +21,7 @@ export async function GET(
       const counts = await votingService.getVoteCounts(promptSlug);
       return NextResponse.json({
         upvoted: false,
-        downvoted: false,
         upvoteCount: counts.upvoteCount,
-        downvoteCount: counts.downvoteCount,
         netScore: counts.netScore,
       });
     }
@@ -33,10 +31,8 @@ export async function GET(
 
     return NextResponse.json({
       upvoted: result.upvoted,
-      downvoted: result.downvoted,
       upvoteCount: result.upvoteCount,
-      downvoteCount: result.downvoteCount,
-      netScore: result.upvoteCount - result.downvoteCount,
+      netScore: result.upvoteCount,
     });
   } catch (error) {
     console.error("Error checking voting status:", error);
@@ -71,29 +67,25 @@ export async function POST(
     console.log("Prompt slug:", promptSlug);
     
     const body = await request.json();
-    const { type } = body; // "upvote" or "downvote"
+    const { type } = body; // only "upvote" supported now
     console.log("Vote type:", type);
 
-    if (!type || !["upvote", "downvote"].includes(type)) {
+    if (!type || type !== "upvote") {
       return NextResponse.json(
-        { error: "Vote type must be 'upvote' or 'downvote'" },
+        { error: "Vote type must be 'upvote'" },
         { status: 400 }
       );
     }
 
     const votingService = getVotingService();
 
-    // Toggle vote using service
-    const result = type === "upvote" 
-      ? await votingService.toggleUpvote(promptSlug, session.user.id)
-      : await votingService.toggleDownvote(promptSlug, session.user.id);
+    // Toggle upvote using service
+    const result = await votingService.toggleUpvote(promptSlug, session.user.id);
 
     return NextResponse.json({
       upvoted: result.upvoted,
-      downvoted: result.downvoted,
       upvoteCount: result.upvoteCount,
-      downvoteCount: result.downvoteCount,
-      netScore: result.upvoteCount - result.downvoteCount,
+      netScore: result.upvoteCount,
       message: result.message,
     });
   } catch (error) {

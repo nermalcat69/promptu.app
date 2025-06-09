@@ -76,7 +76,6 @@ export const prompt = pgTable("prompt", {
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
   upvotes: integer("upvotes").default(0),
-  downvotes: integer("downvotes").default(0),
   views: integer("views").default(0),
   copyCount: integer("copy_count").default(0),
   featured: boolean("featured").default(false),
@@ -96,22 +95,12 @@ export const upvote = pgTable("upvote", {
   createdAt: timestamp("created_at").notNull(),
 });
 
-export const downvote = pgTable("downvote", {
-  id: text("id").primaryKey(),
-  promptId: text("prompt_id")
-    .notNull()
-    .references(() => prompt.id, { onDelete: "cascade" }),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  createdAt: timestamp("created_at").notNull(),
-});
+
 
 // Relations
 export const userRelations = relations(user, ({ many }) => ({
   prompts: many(prompt),
   upvotes: many(upvote),
-  downvotes: many(downvote),
 }));
 
 export const promptRelations = relations(prompt, ({ one, many }) => ({
@@ -124,7 +113,6 @@ export const promptRelations = relations(prompt, ({ one, many }) => ({
     references: [category.id],
   }),
   upvotes: many(upvote),
-  downvotes: many(downvote),
 }));
 
 export const categoryRelations = relations(category, ({ many }) => ({
@@ -142,13 +130,4 @@ export const upvoteRelations = relations(upvote, ({ one }) => ({
   }),
 }));
 
-export const downvoteRelations = relations(downvote, ({ one }) => ({
-  user: one(user, {
-    fields: [downvote.userId],
-    references: [user.id],
-  }),
-  prompt: one(prompt, {
-    fields: [downvote.promptId],
-    references: [prompt.id],
-  }),
-}));
+

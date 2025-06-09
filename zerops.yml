@@ -6,8 +6,8 @@ zerops:
         DATABASE_URL: ${db_connectionTlsString}
         REDIS_URL: redis://redis:6379
         BETTER_AUTH_SECRET: meMg/OW/kvEtOsjAj6GBMOlFmG/Slho5QmjwKlHVSBw=
-        BETTER_AUTH_URL: http://promptu.space/api/auth
-        NEXT_PUBLIC_APP_URL: http://promptu.space
+        BETTER_AUTH_URL: https://promptu.space/api/auth
+        NEXT_PUBLIC_APP_URL: https://promptu.space
         GOOGLE_CLIENT_ID: 957415081012-872o6bukmh5efvo85b83ojcf37892l0p.apps.googleusercontent.com
         GOOGLE_CLIENT_SECRET: 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
         GITHUB_CLIENT_ID: Ov23liC0k3P1AcrUMEyd
@@ -18,14 +18,11 @@ zerops:
       deployFiles: ./
     run:
       base: nodejs@22
-      initCommands:
-        - pnpm run db:generate
-        - pnpm run db:migrate
       envVariables:
         DATABASE_URL: ${db_connectionTlsString}
         REDIS_URL: redis://redis:6379
-        BETTER_AUTH_URL: http://promptu.space/api/auth
-        NEXT_PUBLIC_APP_URL: http://promptu.space
+        BETTER_AUTH_URL: https://promptu.space/api/auth
+        NEXT_PUBLIC_APP_URL: https://promptu.space
         BETTER_AUTH_SECRET: meMg/OW/kvEtOsjAj6GBMOlFmG/Slho5QmjwKlHVSBw=
         GOOGLE_CLIENT_ID: 957415081012-872o6bukmh5efvo85b83ojcf37892l0p.apps.googleusercontent.com
         GOOGLE_CLIENT_SECRET: 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

@@ -7,23 +7,7 @@ export interface IVotingService {
    */
   toggleUpvote(promptSlug: string, userId: string): Promise<{
     upvoted: boolean;
-    downvoted: boolean;
     upvoteCount: number;
-    downvoteCount: number;
-    message: string;
-  }>;
-
-  /**
-   * Toggle downvote for a prompt
-   * @param promptSlug - The slug of the prompt
-   * @param userId - The ID of the user
-   * @returns Promise with downvote status and new counts
-   */
-  toggleDownvote(promptSlug: string, userId: string): Promise<{
-    upvoted: boolean;
-    downvoted: boolean;
-    upvoteCount: number;
-    downvoteCount: number;
     message: string;
   }>;
 
@@ -35,9 +19,7 @@ export interface IVotingService {
    */
   getVotingStatus(promptSlug: string, userId: string): Promise<{
     upvoted: boolean;
-    downvoted: boolean;
     upvoteCount: number;
-    downvoteCount: number;
   }>;
 
   /**
@@ -47,7 +29,6 @@ export interface IVotingService {
    */
   getVoteCounts(promptSlug: string): Promise<{
     upvoteCount: number;
-    downvoteCount: number;
     netScore: number;
   }>;
 } 

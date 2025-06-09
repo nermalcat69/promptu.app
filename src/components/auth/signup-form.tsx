@@ -18,6 +18,7 @@ export function SignUpForm() {
         callbackURL: "/dashboard",
       });
     } catch (error) {
+      console.error("Google OAuth error:", error);
       toast.error("Failed to sign up with Google");
     } finally {
       setGoogleLoading(false);

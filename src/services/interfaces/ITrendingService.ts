@@ -3,7 +3,6 @@ export interface TrendingPrompt {
   title: string;
   slug: string;
   upvotes: number | null;
-  downvotes?: number | null;
   netScore?: number | null;
   excerpt?: string;
   promptType: string;

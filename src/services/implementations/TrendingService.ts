@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { prompt, upvote, downvote } from "@/lib/db/schema";
+import { prompt, upvote } from "@/lib/db/schema";
 import { desc, eq, gte, sql, and } from "drizzle-orm";
 import { ITrendingService, TrendingPrompt } from "../interfaces/ITrendingService";
 
@@ -41,16 +41,15 @@ export class TrendingService implements ITrendingService {
           title: prompt.title,
           slug: prompt.slug,
           upvotes: prompt.upvotes,
-          downvotes: prompt.downvotes,
           excerpt: prompt.excerpt,
           promptType: prompt.promptType,
           createdAt: prompt.createdAt,
-          netScore: sql<number>`COALESCE(${prompt.upvotes}, 0) - COALESCE(${prompt.downvotes}, 0)`.as('net_score'),
+          netScore: sql<number>`COALESCE(${prompt.upvotes}, 0)`.as('net_score'),
         })
         .from(prompt)
         .where(and(...whereConditions))
         .orderBy(
-          desc(sql`COALESCE(${prompt.upvotes}, 0) - COALESCE(${prompt.downvotes}, 0)`), // Sort by net score
+          desc(sql`COALESCE(${prompt.upvotes}, 0)`), // Sort by upvotes
           desc(prompt.createdAt) // Secondary sort by recency
         )
         .limit(limit);
@@ -58,7 +57,6 @@ export class TrendingService implements ITrendingService {
       return trendingData.map(item => ({
         ...item,
         upvotes: item.upvotes || 0,
-        downvotes: item.downvotes || 0,
         netScore: item.netScore || 0,
       }));
     } catch (error) {
@@ -78,11 +76,10 @@ export class TrendingService implements ITrendingService {
           title: prompt.title,
           slug: prompt.slug,
           upvotes: prompt.upvotes,
-          downvotes: prompt.downvotes,
           excerpt: prompt.excerpt,
           promptType: prompt.promptType,
           createdAt: prompt.createdAt,
-          netScore: sql<number>`COALESCE(${prompt.upvotes}, 0) - COALESCE(${prompt.downvotes}, 0)`.as('net_score'),
+          netScore: sql<number>`COALESCE(${prompt.upvotes}, 0)`.as('net_score'),
         })
         .from(prompt)
         .where(and(
@@ -90,7 +87,7 @@ export class TrendingService implements ITrendingService {
           eq(prompt.categoryId, category)
         ))
         .orderBy(
-          desc(sql`COALESCE(${prompt.upvotes}, 0) - COALESCE(${prompt.downvotes}, 0)`),
+          desc(sql`COALESCE(${prompt.upvotes}, 0)`),
           desc(prompt.createdAt)
         )
         .limit(limit);
@@ -98,7 +95,6 @@ export class TrendingService implements ITrendingService {
       return trendingData.map(item => ({
         ...item,
         upvotes: item.upvotes || 0,
-        downvotes: item.downvotes || 0,
         netScore: item.netScore || 0,
       }));
     } catch (error) {
@@ -121,11 +117,10 @@ export class TrendingService implements ITrendingService {
           title: prompt.title,
           slug: prompt.slug,
           upvotes: prompt.upvotes,
-          downvotes: prompt.downvotes,
           excerpt: prompt.excerpt,
           promptType: prompt.promptType,
           createdAt: prompt.createdAt,
-          netScore: sql<number>`COALESCE(${prompt.upvotes}, 0) - COALESCE(${prompt.downvotes}, 0)`.as('net_score'),
+          netScore: sql<number>`COALESCE(${prompt.upvotes}, 0)`.as('net_score'),
         })
         .from(prompt)
         .where(and(
@@ -133,7 +128,7 @@ export class TrendingService implements ITrendingService {
           eq(prompt.promptType, promptType)
         ))
         .orderBy(
-          desc(sql`COALESCE(${prompt.upvotes}, 0) - COALESCE(${prompt.downvotes}, 0)`),
+          desc(sql`COALESCE(${prompt.upvotes}, 0)`),
           desc(prompt.createdAt)
         )
         .limit(limit);
@@ -141,7 +136,6 @@ export class TrendingService implements ITrendingService {
       return trendingData.map(item => ({
         ...item,
         upvotes: item.upvotes || 0,
-        downvotes: item.downvotes || 0,
         netScore: item.netScore || 0,
       }));
     } catch (error) {
@@ -164,11 +158,10 @@ export class TrendingService implements ITrendingService {
           title: prompt.title,
           slug: prompt.slug,
           upvotes: prompt.upvotes,
-          downvotes: prompt.downvotes,
           excerpt: prompt.excerpt,
           promptType: prompt.promptType,
           createdAt: prompt.createdAt,
-          netScore: sql<number>`COALESCE(${prompt.upvotes}, 0) - COALESCE(${prompt.downvotes}, 0)`.as('net_score'),
+          netScore: sql<number>`COALESCE(${prompt.upvotes}, 0)`.as('net_score'),
         })
         .from(prompt)
         .where(and(
@@ -176,15 +169,14 @@ export class TrendingService implements ITrendingService {
           gte(prompt.createdAt, oneDayAgo)
         ))
         .orderBy(
-          desc(sql`(COALESCE(${prompt.upvotes}, 0) - COALESCE(${prompt.downvotes}, 0)) / EXTRACT(EPOCH FROM (NOW() - ${prompt.createdAt})) * 3600`), // Net score per hour
-          desc(sql`COALESCE(${prompt.upvotes}, 0) - COALESCE(${prompt.downvotes}, 0)`)
+          desc(sql`COALESCE(${prompt.upvotes}, 0) / EXTRACT(EPOCH FROM (NOW() - ${prompt.createdAt})) * 3600`), // Upvotes per hour
+          desc(sql`COALESCE(${prompt.upvotes}, 0)`)
         )
         .limit(limit);
 
       return hotData.map(item => ({
         ...item,
         upvotes: item.upvotes || 0,
-        downvotes: item.downvotes || 0,
         netScore: item.netScore || 0,
       }));
     } catch (error) {

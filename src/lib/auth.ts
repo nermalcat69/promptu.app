@@ -15,10 +15,12 @@ export const auth = betterAuth({
     google: {
       clientId: env.GOOGLE_CLIENT_ID,
       clientSecret: env.GOOGLE_CLIENT_SECRET,
+      redirectURI: `${env.BETTER_AUTH_URL}/api/auth/callback/google`,
     },
     github: {
       clientId: env.GITHUB_CLIENT_ID,
       clientSecret: env.GITHUB_CLIENT_SECRET,
+      redirectURI: `${env.BETTER_AUTH_URL}/api/auth/callback/github`,
     },
   },
   plugins: [
@@ -35,5 +37,9 @@ export const auth = betterAuth({
     deleteUser: {
       enabled: true,
     },
+  },
+  advanced: {
+    generateId: false,
+    useSecureCookies: env.NODE_ENV === "production",
   },
 });
