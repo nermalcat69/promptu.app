@@ -4,7 +4,7 @@ import { prompt, user } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://promptu.app'
+  const baseUrl = 'https://promptu.space'
 
   // Static pages
   const staticPages = [

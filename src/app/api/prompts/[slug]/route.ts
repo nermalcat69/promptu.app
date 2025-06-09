@@ -102,7 +102,13 @@ export async function GET(
 
     // Increment view count (only if not the author and not recently viewed)
     if (!session || session.user.id !== promptData.author?.id) {
-      const viewCacheKey = `view:${promptSlug}:${session?.user?.id || request.ip || 'anonymous'}`;
+      // Get client IP from headers
+      const headersList = await headers();
+      const forwarded = headersList.get('x-forwarded-for');
+      const realIp = headersList.get('x-real-ip');
+      const clientIp = forwarded?.split(',')[0] || realIp || 'anonymous';
+      
+      const viewCacheKey = `view:${promptSlug}:${session?.user?.id || clientIp}`;
       
       // Check both Redis cache and in-memory cache
       const [redisRecentlyViewed, memoryRecentlyViewed] = await Promise.all([

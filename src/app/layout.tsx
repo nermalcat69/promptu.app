@@ -34,13 +34,13 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://promptu.app",
+    url: "https://promptu.space",
     title: "Promptu - Discover, Share & Find AI Prompts",
     description: "The ultimate marketplace for AI prompts. Find system prompts, user prompts, and developer prompts for all your AI needs.",
     siteName: "Promptu",
     images: [
       {
-        url: "https://promptu.app/og-image.png",
+        url: "/og.png",
         width: 1200,
         height: 630,
         alt: "Promptu - AI Prompt Marketplace",
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
     title: "Promptu - Discover, Share & Find AI Prompts",
     description: "The ultimate marketplace for AI prompts. Find system prompts, user prompts, and developer prompts for all your AI needs.",
     creator: "@promptu_app",
-    images: ["https://promptu.app/og-image.png"],
+    images: ["/og.png"],
   },
   icons: {
     icon: "/favicon.png",
@@ -60,7 +60,7 @@ export const metadata: Metadata = {
     apple: "/favicon.png",
   },
   manifest: "/manifest.json",
-  metadataBase: new URL("https://promptu.app"),
+  metadataBase: new URL("https://promptu.space"),
 };
 
 export default function RootLayout({

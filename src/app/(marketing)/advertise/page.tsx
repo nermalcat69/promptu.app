@@ -191,7 +191,7 @@ export default function AdvertisePage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" className="bg-black text-white hover:bg-gray-800">
                 <Mail className="h-4 w-4 mr-2" />
-                <a href="mailto:ads@promptu.app">Contact Advertising Team</a>
+                <a href="mailto:ads@promptu.space">Contact Advertising Team</a>
               </Button>
               <Button variant="outline" size="lg">
                 <Link href="/media-kit">Download Media Kit</Link>

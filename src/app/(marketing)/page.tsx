@@ -508,7 +508,7 @@ export default function Home() {
 
                   <div className="flex flex-col sm:flex-row gap-3 pt-2 justify-center">
                     <a 
-                      href="mailto:ads@promptu.app"
+                      href="mailto:ads@promptu.space"
                       className="inline-flex items-center justify-center px-3 py-1.5 border border-transparent text-base font-medium rounded-md text-white bg-black hover:bg-gray-800 transition-colors"
                     >
                       Contact Us
