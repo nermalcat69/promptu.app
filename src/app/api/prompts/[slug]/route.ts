@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { prompt, category, user } from "@/lib/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { prompt, category, user, comment } from "@/lib/db/schema";
+import { eq, sql, desc } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { cacheGet, cacheSet } from "@/lib/redis";
+import { sendPromptNotification } from "@/lib/discord";
+import { trackEvent } from "@/lib/redis";
 
 // Simple in-memory cache for view tracking when Redis is not available
 const viewCache = new Map<string, number>();
@@ -224,6 +226,57 @@ export async function PUT(
         updatedAt: prompt.updatedAt,
       });
 
+    // Send Discord notification and track analytics
+    try {
+      // Get category name for notification
+      let categoryName = "Uncategorized";
+      if (categoryId) {
+        const categoryResult = await db
+          .select({ name: category.name })
+          .from(category)
+          .where(eq(category.id, categoryId))
+          .limit(1);
+        if (categoryResult[0]) {
+          categoryName = categoryResult[0].name;
+        }
+      }
+
+      // Send Discord notification
+      await sendPromptNotification(
+        'edited',
+        {
+          id: updatedPrompt[0].id,
+          title: updatedPrompt[0].title,
+          description: excerpt,
+          category: categoryName,
+          tags: [], // Tags not available in this context
+          isPublic: updatedPrompt[0].published,
+        },
+        {
+          id: session.user.id,
+          name: session.user.name,
+          username: session.user.username || session.user.email.split('@')[0],
+          image: session.user.image,
+        }
+      );
+
+      // Track analytics event
+      await trackEvent('prompt_edited', {
+        userId: session.user.id,
+        promptId: updatedPrompt[0].id,
+        title: updatedPrompt[0].title,
+        slug: promptSlug,
+        promptType: updatedPrompt[0].promptType,
+        category: categoryName,
+        published: updatedPrompt[0].published,
+      });
+
+      console.log(`[Prompt API] Edited prompt notification sent for: ${updatedPrompt[0].title}`);
+    } catch (error) {
+      console.error("[Prompt API] Failed to send Discord notification:", error);
+      // Don't fail the request if Discord notification fails
+    }
+
     return NextResponse.json({
       message: "Prompt updated successfully",
       prompt: updatedPrompt[0],
@@ -258,7 +311,14 @@ export async function DELETE(
 
     // Check if user owns the prompt
     const existingPrompt = await db
-      .select({ id: prompt.id, authorId: prompt.authorId })
+      .select({ 
+        id: prompt.id, 
+        authorId: prompt.authorId,
+        title: prompt.title,
+        excerpt: prompt.excerpt,
+        categoryId: prompt.categoryId,
+        published: prompt.published
+      })
       .from(prompt)
       .where(eq(prompt.slug, promptSlug))
       .limit(1);
@@ -277,8 +337,57 @@ export async function DELETE(
       );
     }
 
+    // Get additional data for Discord notification before deletion
+    let categoryName = "Uncategorized";
+    if (existingPrompt[0].categoryId) {
+      const categoryResult = await db
+        .select({ name: category.name })
+        .from(category)
+        .where(eq(category.id, existingPrompt[0].categoryId))
+        .limit(1);
+      if (categoryResult[0]) {
+        categoryName = categoryResult[0].name;
+      }
+    }
+
     // Delete prompt (comments and upvotes will be cascade deleted)
     await db.delete(prompt).where(eq(prompt.slug, promptSlug));
+
+    // Send Discord notification and track analytics after successful deletion
+    try {
+      // Send Discord notification
+      await sendPromptNotification(
+        'deleted',
+        {
+          id: existingPrompt[0].id,
+          title: existingPrompt[0].title,
+          description: existingPrompt[0].excerpt,
+          category: categoryName,
+          tags: [],
+          isPublic: existingPrompt[0].published,
+        },
+        {
+          id: session.user.id,
+          name: session.user.name,
+          username: session.user.username || session.user.email.split('@')[0],
+          image: session.user.image,
+        }
+      );
+
+      // Track analytics event
+      await trackEvent('prompt_deleted', {
+        userId: session.user.id,
+        promptId: existingPrompt[0].id,
+        title: existingPrompt[0].title,
+        slug: promptSlug,
+        category: categoryName,
+      });
+
+      console.log(`[Prompt API] Deleted prompt notification sent for: ${existingPrompt[0].title}`);
+    } catch (error) {
+      console.error("[Prompt API] Failed to send Discord notification:", error);
+      // Don't fail the request if Discord notification fails
+    }
 
     return NextResponse.json({
       message: "Prompt deleted successfully",

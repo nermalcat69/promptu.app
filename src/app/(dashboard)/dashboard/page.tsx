@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { Plus, Calendar, Eye, ThumbsUp, Copy, Edit, Trash2, User, BarChart3, TrendingUp } from "lucide-react";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Metadata } from "next";
 
 async function getUserPrompts(userId: string) {
@@ -56,6 +56,11 @@ export default async function DashboardPage() {
 	
 	if (!user) {
 		notFound();
+	}
+
+	// Check if user needs onboarding (server-side redirect)
+	if (!user.username) {
+		redirect("/onboarding");
 	}
 
 	const userPrompts = await getUserPrompts(user.id);

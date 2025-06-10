@@ -4,6 +4,11 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 
+// Simple ID generation function
+function generateId(): string {
+  return Math.random().toString(36).substring(2) + Date.now().toString(36);
+}
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
@@ -39,7 +44,9 @@ export const auth = betterAuth({
     },
   },
   advanced: {
-    generateId: false,
+    database: {
+      generateId,
+    },
     useSecureCookies: env.NODE_ENV === "production",
   },
 });

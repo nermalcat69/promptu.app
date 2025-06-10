@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { User, CheckCircle, RefreshCw, Sparkles } from "lucide-react";
+import { trackRegistration } from "@/components/analytics";
 
 export default function OnboardingPage() {
   const { data: session, isPending } = useSession();
@@ -105,20 +106,48 @@ export default function OnboardingPage() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  // Add validation helper functions
+  const isUsernameValid = formData.username && formData.username.length >= 3 && /^[a-zA-Z0-9_-]+$/.test(formData.username);
+  const isNameValid = session?.user.name && session.user.name.trim().length > 0;
+  const isFormValid = isUsernameValid && isNameValid && !isGeneratingUsername;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log("[Onboarding] Form submission started");
+    console.log("[Onboarding] Session:", session);
+    console.log("[Onboarding] Form data:", formData);
+    
+    // Validation checks
+    if (!session?.user.name || session.user.name.trim().length === 0) {
+      console.log("[Onboarding] Validation failed: No display name");
+      toast.error("Display name is required");
+      return;
+    }
+
     if (!formData.username || formData.username.length < 3) {
+      console.log("[Onboarding] Validation failed: Username too short");
       toast.error("Username must be at least 3 characters");
       return;
     }
 
     if (!/^[a-zA-Z0-9_-]+$/.test(formData.username)) {
+      console.log("[Onboarding] Validation failed: Invalid username characters");
       toast.error("Username can only contain letters, numbers, hyphens, and underscores");
       return;
     }
 
+    console.log("[Onboarding] Validation passed, making API call");
     setIsLoading(true);
+
+    const requestBody = {
+      name: session.user.name,
+      username: formData.username,
+      bio: formData.bio || null,
+      website: formData.website || null,
+    };
+
+    console.log("[Onboarding] Request body:", requestBody);
 
     try {
       const response = await fetch("/api/user/profile", {
@@ -126,25 +155,35 @@ export default function OnboardingPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          name: session?.user.name,
-          username: formData.username,
-          bio: formData.bio || null,
-          website: formData.website || null,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
+      console.log("[Onboarding] Response status:", response.status);
+      console.log("[Onboarding] Response headers:", Object.fromEntries(response.headers.entries()));
+
+      const responseData = await response.json();
+      console.log("[Onboarding] Response data:", responseData);
+
       if (response.ok) {
+        console.log("[Onboarding] Profile updated successfully!");
         toast.success("Profile setup complete!");
         setStep(3);
+        console.log("[Onboarding] Setting timeout for redirect to dashboard");
+        
+        // Redirect to dashboard after showing success message for 3 seconds
         setTimeout(() => {
+          console.log("[Onboarding] Redirecting to dashboard");
           router.push("/dashboard");
-        }, 2000);
+        }, 3000);
+
+        // Track registration completion in Google Analytics
+        trackRegistration(session.user.id, formData.username);
       } else {
-        const error = await response.json();
-        toast.error(error.error || "Failed to setup profile");
+        console.log("[Onboarding] API error:", responseData);
+        toast.error(responseData.error || "Failed to setup profile");
       }
     } catch (error) {
+      console.error("[Onboarding] Network error:", error);
       toast.error("Failed to setup profile");
     } finally {
       setIsLoading(false);
@@ -270,7 +309,29 @@ export default function OnboardingPage() {
                     placeholder={isGeneratingUsername ? "Generating..." : "Enter username"}
                     disabled={isGeneratingUsername}
                     required
+                    className={`${
+                      formData.username && !isUsernameValid 
+                        ? "border-red-300 focus:border-red-500 focus:ring-red-500" 
+                        : formData.username && isUsernameValid
+                        ? "border-green-300 focus:border-green-500 focus:ring-green-500"
+                        : ""
+                    }`}
                   />
+                  
+                  {/* Username validation feedback */}
+                  {formData.username && (
+                    <div className="text-xs mt-1">
+                      {formData.username.length < 3 && (
+                        <p className="text-red-600">Username must be at least 3 characters</p>
+                      )}
+                      {formData.username.length >= 3 && !/^[a-zA-Z0-9_-]+$/.test(formData.username) && (
+                        <p className="text-red-600">Username can only contain letters, numbers, hyphens, and underscores</p>
+                      )}
+                      {isUsernameValid && (
+                        <p className="text-green-600">✓ Username looks good!</p>
+                      )}
+                    </div>
+                  )}
                   
                   <div className="flex gap-2">
                     <Button
@@ -361,11 +422,23 @@ export default function OnboardingPage() {
                   </Button>
                   <Button 
                     type="submit" 
-                    disabled={isLoading || !formData.username || isGeneratingUsername}
-                    className="flex-1 bg-gray-900 hover:bg-gray-800 text-white"
+                    disabled={isLoading || !isFormValid}
+                    className={`flex-1 ${
+                      isLoading || !isFormValid
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-gray-900 hover:bg-gray-800"
+                    } text-white`}
                   >
                     {isLoading ? "Setting up..." : "Complete Setup"}
                   </Button>
+                  
+                  {/* Form validation status */}
+                  {!isFormValid && !isLoading && (
+                    <div className="text-xs text-gray-500 mt-2 text-center">
+                      {!isNameValid && "Display name is required. "}
+                      {!isUsernameValid && "Please enter a valid username (3+ characters, letters/numbers/hyphens/underscores only)."}
+                    </div>
+                  )}
                 </div>
               </form>
             </CardContent>

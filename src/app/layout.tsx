@@ -1,6 +1,10 @@
 // Validate environment variables on app startup
 import '@/lib/env';
 
+// Initialize Redis registration count
+import { initializeRegistrationCount } from '@/lib/redis';
+initializeRegistrationCount().catch(console.error);
+
 import React from "react";
 import type { Metadata } from "next";
 import { JetBrains_Mono, Inter } from "next/font/google";
@@ -8,6 +12,7 @@ import "@/styles/globals.css";
 import { cn } from "@/lib/utils";
 import RootProviders from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
+import { AnalyticsProvider } from "@/components/analytics";
 
 const fontSans = Inter({
   subsets: ["latin"],
@@ -79,7 +84,9 @@ export default function RootLayout({
         )}
       >
         <RootProviders>
-          {children}
+          <AnalyticsProvider>
+            {children}
+          </AnalyticsProvider>
           <Toaster position="bottom-right" />
         </RootProviders>
       </body>

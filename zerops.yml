@@ -6,28 +6,38 @@ zerops:
         DATABASE_URL: ${db_connectionTlsString}
         REDIS_URL: redis://redis:6379
         BETTER_AUTH_SECRET: meMg/OW/kvEtOsjAj6GBMOlFmG/Slho5QmjwKlHVSBw=
-        BETTER_AUTH_URL: https://promptu.space/api/auth
-        NEXT_PUBLIC_APP_URL: https://promptu.space
+        BETTER_AUTH_URL: https://promptu.dev
+        NEXT_PUBLIC_APP_URL: https://promptu.dev
         GOOGLE_CLIENT_ID: 957415081012-872o6bukmh5efvo85b83ojcf37892l0p.apps.googleusercontent.com
         GOOGLE_CLIENT_SECRET: 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
         GITHUB_CLIENT_ID: Ov23liC0k3P1AcrUMEyd
         GITHUB_CLIENT_SECRET: fb4a14fe91c9185f736fd814fbd41cad8ac9f787
+        NEXT_PUBLIC_GOOGLE_ANALYTICS_ID: G-040GPW5YHK
+        NEXT_PUBLIC_GOOGLE_ANALYTICS_STREAM_ID: 11334570600
+        DISCORD_WEBHOOK_REGISTRATIONS: https://discord.com/api/webhooks/1381945189559439452/BMJQX2OP1EXI3VZCQHy0qoMpoLF3cQRxZawS_wrPTtDh_FNkiB1PlkYTHJRIuWfP-5kt
+        DISCORD_WEBHOOK_PROMPTS: https://discord.com/api/webhooks/1381948684312383569/eNzSlWBVfSN-AbSErmEvJLT7l56OV_RjoFUcxb6RKLkA2vx
       buildCommands:
         - pnpm i
         - pnpm build
       deployFiles: ./
+      cache:
+        - node_modules
     run:
       base: nodejs@22
       envVariables:
         DATABASE_URL: ${db_connectionTlsString}
         REDIS_URL: redis://redis:6379
-        BETTER_AUTH_URL: https://promptu.space/api/auth
-        NEXT_PUBLIC_APP_URL: https://promptu.space
+        BETTER_AUTH_URL: https://promptu.dev
+        NEXT_PUBLIC_APP_URL: https://promptu.dev
         BETTER_AUTH_SECRET: meMg/OW/kvEtOsjAj6GBMOlFmG/Slho5QmjwKlHVSBw=
         GOOGLE_CLIENT_ID: 957415081012-872o6bukmh5efvo85b83ojcf37892l0p.apps.googleusercontent.com
         GOOGLE_CLIENT_SECRET: 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
         GITHUB_CLIENT_ID: Ov23liC0k3P1AcrUMEyd
         GITHUB_CLIENT_SECRET: fb4a14fe91c9185f736fd814fbd41cad8ac9f787
+        NEXT_PUBLIC_GOOGLE_ANALYTICS_ID: G-040GPW5YHK
+        NEXT_PUBLIC_GOOGLE_ANALYTICS_STREAM_ID: 11334570600
+        DISCORD_WEBHOOK_REGISTRATIONS: https://discord.com/api/webhooks/1381945189559439452/BMJQX2OP1EXI3VZCQHy0qoMpoLF3cQRxZawS_wrPTtDh_FNkiB1PlkYTHJRIuWfP-5kt
+        DISCORD_WEBHOOK_PROMPTS: https://discord.com/api/webhooks/1381948684312383569/eNzSlWBVfSN-AbSErmEvJLT7l56OV_RjoFUcxb6RKLkA2vx
       ports:
         - port: 3000
           httpSupport: true

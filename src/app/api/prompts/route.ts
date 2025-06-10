@@ -5,6 +5,8 @@ import { eq, desc, sql, ilike, and } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { validatePromptContent, formatValidationErrorMessage } from "@/lib/validations/prompt-validation";
+import { sendPromptNotification } from "@/lib/discord";
+import { trackEvent } from "@/lib/redis";
 
 // GET /api/prompts - List prompts with filters
 export async function GET(request: NextRequest) {
@@ -237,6 +239,58 @@ export async function POST(request: NextRequest) {
         promptType: prompt.promptType,
         createdAt: prompt.createdAt,
       });
+
+    // Send Discord notification and track analytics only if published
+    if (published) {
+      try {
+        // Get category name for notification
+        let categoryName = "Uncategorized";
+        if (finalCategoryId) {
+          const categoryResult = await db
+            .select({ name: category.name })
+            .from(category)
+            .where(eq(category.id, finalCategoryId))
+            .limit(1);
+          if (categoryResult[0]) {
+            categoryName = categoryResult[0].name;
+          }
+        }
+
+        // Send Discord notification
+        await sendPromptNotification(
+          'published',
+          {
+            id: newPrompt[0].id,
+            title: newPrompt[0].title,
+            description: excerpt,
+            category: categoryName,
+            tags: tags || [],
+            isPublic: true,
+          },
+          {
+            id: session.user.id,
+            name: session.user.name,
+            username: session.user.username || session.user.email.split('@')[0],
+            image: session.user.image,
+          }
+        );
+
+        // Track analytics event
+        await trackEvent('prompt_published', {
+          userId: session.user.id,
+          promptId: newPrompt[0].id,
+          title: newPrompt[0].title,
+          slug: newPrompt[0].slug,
+          promptType: newPrompt[0].promptType,
+          category: categoryName,
+        });
+
+        console.log(`[Prompt API] Published prompt notification sent for: ${newPrompt[0].title}`);
+      } catch (error) {
+        console.error("[Prompt API] Failed to send Discord notification:", error);
+        // Don't fail the request if Discord notification fails
+      }
+    }
 
     return NextResponse.json(
       { 

@@ -5,7 +5,7 @@ const envSchema = z.object({
   // Database
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
 
-  // Redis (for caching)
+  // Redis (optional for caching)
   REDIS_URL: z.string().optional(),
 
   // Better Auth
@@ -21,9 +21,12 @@ const envSchema = z.object({
   // Optional environment variables
   DISCORD_FEEDBACK_WEBHOOK_URL: z.string().optional(),
   DISCORD_FEATURE_WEBHOOK_URL: z.string().optional(),
+  DISCORD_WEBHOOK_REGISTRATIONS: z.string().optional(),
+  DISCORD_WEBHOOK_PROMPTS: z.string().optional(),
   
   // Analytics (optional but recommended for production)
   NEXT_PUBLIC_GOOGLE_ANALYTICS_ID: z.string().optional(),
+  NEXT_PUBLIC_GOOGLE_ANALYTICS_STREAM_ID: z.string().optional(),
   NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
   NEXT_PUBLIC_POSTHOG_HOST: z.string().optional(),
   
