@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { prompt, category, user, comment } from "@/lib/db/schema";
-import { eq, sql, desc } from "drizzle-orm";
+import { prompt, user, category } from "@/lib/db/schema";
+import { eq, desc, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { cacheGet, cacheSet } from "@/lib/redis";
@@ -241,6 +241,16 @@ export async function PUT(
         }
       }
 
+      // Get user's username from database
+      const userResult = await db
+        .select({ username: user.username, email: user.email })
+        .from(user)
+        .where(eq(user.id, session.user.id))
+        .limit(1);
+      
+      const username = userResult[0]?.username || session.user.email.split('@')[0];
+      const userEmail = userResult[0]?.email || session.user.email;
+
       // Send Discord notification
       await sendPromptNotification(
         'edited',
@@ -250,12 +260,13 @@ export async function PUT(
           description: excerpt,
           category: categoryName,
           tags: [], // Tags not available in this context
-          isPublic: updatedPrompt[0].published,
+          isPublic: updatedPrompt[0].published ?? false,
         },
         {
           id: session.user.id,
           name: session.user.name,
-          username: session.user.username || session.user.email.split('@')[0],
+          username: username,
+          email: userEmail,
           image: session.user.image,
         }
       );
@@ -355,6 +366,16 @@ export async function DELETE(
 
     // Send Discord notification and track analytics after successful deletion
     try {
+      // Get user's username and email from database
+      const userResult = await db
+        .select({ username: user.username, email: user.email })
+        .from(user)
+        .where(eq(user.id, session.user.id))
+        .limit(1);
+      
+      const username = userResult[0]?.username || session.user.email.split('@')[0];
+      const userEmail = userResult[0]?.email || session.user.email;
+
       // Send Discord notification
       await sendPromptNotification(
         'deleted',
@@ -364,12 +385,13 @@ export async function DELETE(
           description: existingPrompt[0].excerpt,
           category: categoryName,
           tags: [],
-          isPublic: existingPrompt[0].published,
+          isPublic: existingPrompt[0].published ?? false,
         },
         {
           id: session.user.id,
           name: session.user.name,
-          username: session.user.username || session.user.email.split('@')[0],
+          username: username,
+          email: userEmail,
           image: session.user.image,
         }
       );

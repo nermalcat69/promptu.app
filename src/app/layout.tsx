@@ -1,10 +1,3 @@
-// Validate environment variables on app startup
-import '@/lib/env';
-
-// Initialize Redis registration count
-import { initializeRegistrationCount } from '@/lib/redis';
-initializeRegistrationCount().catch(console.error);
-
 import React from "react";
 import type { Metadata } from "next";
 import { JetBrains_Mono, Inter } from "next/font/google";

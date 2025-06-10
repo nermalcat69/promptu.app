@@ -1,20 +1,17 @@
 import Redis from 'ioredis';
-import { env } from '@/lib/env';
 
 let redis: Redis | null = null;
 
 // Initialize Redis connection
 function getRedisClient(): Redis | null {
-  if (!env.REDIS_URL) {
+  if (!process.env.REDIS_URL) {
     console.log('Redis not configured, using fallback methods');
     return null;
   }
 
   if (!redis) {
     try {
-      redis = new Redis(env.REDIS_URL, {
-        retryDelayOnFailover: 100,
-        retryTimerOnFailover: 2000,
+      redis = new Redis(process.env.REDIS_URL, {
         maxRetriesPerRequest: 3,
         lazyConnect: true,
       });

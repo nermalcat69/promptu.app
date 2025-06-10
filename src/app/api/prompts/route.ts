@@ -256,6 +256,16 @@ export async function POST(request: NextRequest) {
           }
         }
 
+        // Get user's username from database
+        const userResult = await db
+          .select({ username: user.username, email: user.email })
+          .from(user)
+          .where(eq(user.id, session.user.id))
+          .limit(1);
+        
+        const username = userResult[0]?.username || session.user.email.split('@')[0];
+        const userEmail = userResult[0]?.email || session.user.email;
+
         // Send Discord notification
         await sendPromptNotification(
           'published',
@@ -270,7 +280,8 @@ export async function POST(request: NextRequest) {
           {
             id: session.user.id,
             name: session.user.name,
-            username: session.user.username || session.user.email.split('@')[0],
+            username: username,
+            email: userEmail,
             image: session.user.image,
           }
         );

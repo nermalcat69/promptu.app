@@ -40,28 +40,37 @@ async function getPrompt(slug: string) {
   }
 }
 
-
-
 export default function PromptPage() {
   const params = useParams();
-  const slug = params.slug as string;
+  const slug = params?.slug as string;
   const [prompt, setPrompt] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [copyCount, setCopyCount] = useState(0);
 
   useEffect(() => {
-    const loadPrompt = async () => {
-      console.log('Loading prompt:', slug);
-      const promptData = await getPrompt(slug);
-      if (!promptData) {
-        notFound();
-      }
-      console.log('Prompt loaded, views:', promptData.views);
-      setPrompt(promptData);
-      setLoading(false);
-    };
-    
-    loadPrompt();
+    if (slug) {
+      fetchPrompt();
+    }
   }, [slug]);
+
+  const fetchPrompt = async () => {
+    try {
+      setLoading(true);
+      const data = await getPrompt(slug);
+      if (data) {
+        setPrompt(data);
+        setCopyCount(data.copyCount || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching prompt:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCopyIncrement = () => {
+    setCopyCount(prev => prev + 1);
+  };
 
   if (loading) {
     return (
@@ -219,6 +228,7 @@ export default function PromptPage() {
                       promptSlug={prompt.slug}
                       className="bg-gray-900 hover:bg-gray-800 text-white"
                       size="sm"
+                      onCopy={handleCopyIncrement}
                     >
                       Copy
                     </CopyButton>
@@ -250,7 +260,7 @@ export default function PromptPage() {
                   </div>
                   <div className="flex items-center gap-1">
                     <Copy className="h-4 w-4" />
-                    <span>{prompt.copyCount || 0}</span>
+                    <span>{copyCount}</span>
                   </div>
                   <span className="font-mono">{formatTokenCount(tokens)}</span>
                 </div>

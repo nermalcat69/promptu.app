@@ -1,16 +1,12 @@
-import { env } from "@/lib/env";
-
-interface DiscordEmbedField {
-  name: string;
-  value: string;
-  inline?: boolean;
-}
-
 interface DiscordEmbed {
   title: string;
-  description?: string;
+  description: string;
   color: number;
-  fields?: DiscordEmbedField[];
+  fields?: {
+    name: string;
+    value: string;
+    inline?: boolean;
+  }[];
   timestamp?: string;
   footer?: {
     text: string;
@@ -21,10 +17,10 @@ interface DiscordEmbed {
 }
 
 interface DiscordWebhookPayload {
-  content?: string;
-  embeds?: DiscordEmbed[];
+  embeds: DiscordEmbed[];
 }
 
+// Generic function to send Discord webhook
 async function sendDiscordWebhook(webhookUrl: string, payload: DiscordWebhookPayload) {
   try {
     const response = await fetch(webhookUrl, {
@@ -36,15 +32,13 @@ async function sendDiscordWebhook(webhookUrl: string, payload: DiscordWebhookPay
     });
 
     if (!response.ok) {
-      console.error('Discord webhook failed:', response.status, response.statusText);
-      return false;
+      throw new Error(`Discord webhook failed: ${response.status} ${response.statusText}`);
     }
 
-    console.log('Discord webhook sent successfully');
-    return true;
+    console.log('Discord notification sent successfully');
   } catch (error) {
-    console.error('Error sending Discord webhook:', error);
-    return false;
+    console.error('Failed to send Discord webhook:', error);
+    throw error;
   }
 }
 
@@ -55,14 +49,14 @@ export async function sendRegistrationNotification(user: {
   username: string;
   image?: string | null;
 }, totalRegistrations: number) {
-  if (!env.DISCORD_WEBHOOK_REGISTRATIONS) {
+  if (!process.env.DISCORD_WEBHOOK_REGISTRATIONS) {
     console.log('Discord registration webhook not configured, skipping notification');
     return;
   }
 
   const embed: DiscordEmbed = {
     title: "🎉 New User Registration",
-    description: `A new user has completed their profile setup on Promptu!\n\n**Total Registrations: ${totalRegistrations} users** 📊`,
+    description: `A new user has completed their profile setup on Promptu!\n\n**Total Registrations: ${totalRegistrations} users** 📊\n\n👤 **Profile:** ${process.env.NEXT_PUBLIC_APP_URL}/profile/${user.username}`,
     color: 0x22c55e, // Green color
     fields: [
       {
@@ -79,11 +73,6 @@ export async function sendRegistrationNotification(user: {
         name: "📧 Email",
         value: user.email,
         inline: true,
-      },
-      {
-        name: "🔗 Profile URL",
-        value: `${env.NEXT_PUBLIC_APP_URL}/profile/${user.username}`,
-        inline: false,
       },
       {
         name: "📈 Registration #",
@@ -111,7 +100,7 @@ export async function sendRegistrationNotification(user: {
     embeds: [embed],
   };
 
-  await sendDiscordWebhook(env.DISCORD_WEBHOOK_REGISTRATIONS, payload);
+  await sendDiscordWebhook(process.env.DISCORD_WEBHOOK_REGISTRATIONS!, payload);
 }
 
 export async function sendFeedbackNotification(feedback: {
@@ -119,7 +108,7 @@ export async function sendFeedbackNotification(feedback: {
   message: string;
   userEmail?: string;
 }) {
-  if (!env.DISCORD_FEEDBACK_WEBHOOK_URL) {
+  if (!process.env.DISCORD_FEEDBACK_WEBHOOK_URL) {
     console.log('Discord feedback webhook not configured, skipping notification');
     return;
   }
@@ -150,7 +139,7 @@ export async function sendFeedbackNotification(feedback: {
     embeds: [embed],
   };
 
-  await sendDiscordWebhook(env.DISCORD_FEEDBACK_WEBHOOK_URL, payload);
+  await sendDiscordWebhook(process.env.DISCORD_FEEDBACK_WEBHOOK_URL, payload);
 }
 
 export async function sendFeatureRequestNotification(feature: {
@@ -158,7 +147,7 @@ export async function sendFeatureRequestNotification(feature: {
   description: string;
   userEmail?: string;
 }) {
-  if (!env.DISCORD_FEATURE_WEBHOOK_URL) {
+  if (!process.env.DISCORD_FEATURE_WEBHOOK_URL) {
     console.log('Discord feature webhook not configured, skipping notification');
     return;
   }
@@ -189,7 +178,7 @@ export async function sendFeatureRequestNotification(feature: {
     embeds: [embed],
   };
 
-  await sendDiscordWebhook(env.DISCORD_FEATURE_WEBHOOK_URL, payload);
+  await sendDiscordWebhook(process.env.DISCORD_FEATURE_WEBHOOK_URL, payload);
 }
 
 // Send prompt event notification
@@ -207,10 +196,11 @@ export async function sendPromptNotification(
     id: string;
     name: string;
     username: string;
+    email: string;
     image?: string | null;
   }
 ) {
-  if (!env.DISCORD_WEBHOOK_PROMPTS) {
+  if (!process.env.DISCORD_WEBHOOK_PROMPTS) {
     console.log('Discord prompt webhook not configured, skipping notification');
     return;
   }
@@ -249,6 +239,11 @@ export async function sendPromptNotification(
         inline: true,
       },
       {
+        name: "📧 Author Email",
+        value: user.email,
+        inline: true,
+      },
+      {
         name: "📂 Category",
         value: prompt.category,
         inline: true,
@@ -260,7 +255,12 @@ export async function sendPromptNotification(
       },
       {
         name: "🔗 Prompt URL",
-        value: `${env.NEXT_PUBLIC_APP_URL}/prompts/${prompt.id}`,
+        value: `${process.env.NEXT_PUBLIC_APP_URL}/prompts/${prompt.id}`,
+        inline: false,
+      },
+      {
+        name: "👤 Author Profile",
+        value: `${process.env.NEXT_PUBLIC_APP_URL}/profile/${user.username}`,
         inline: false,
       },
     ],
@@ -272,7 +272,7 @@ export async function sendPromptNotification(
 
   // Add tags field if available
   if (prompt.tags && prompt.tags.length > 0) {
-    embed.fields!.splice(3, 0, {
+    embed.fields!.splice(5, 0, {
       name: "🏷️ Tags",
       value: prompt.tags.map(tag => `\`${tag}\``).join(', '),
       inline: false,
@@ -290,5 +290,5 @@ export async function sendPromptNotification(
     embeds: [embed],
   };
 
-  await sendDiscordWebhook(env.DISCORD_WEBHOOK_PROMPTS, payload);
+  await sendDiscordWebhook(process.env.DISCORD_WEBHOOK_PROMPTS!, payload);
 } 

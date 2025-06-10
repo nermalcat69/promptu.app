@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
-import { env } from '@/lib/env';
 
 // Google Analytics configuration
-const GA_MEASUREMENT_ID = env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID;
+const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID;
 
 // Google Analytics functions
 export const gtag = (...args: any[]) => {
@@ -60,8 +59,8 @@ export const trackPromptCopy = (promptId: string, promptTitle: string) => {
   });
 };
 
-// Google Analytics Script Component
-export function GoogleAnalytics() {
+// Page tracking component that needs search params
+function PageTracker() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -73,6 +72,11 @@ export function GoogleAnalytics() {
     }
   }, [pathname, searchParams]);
 
+  return null;
+}
+
+// Google Analytics Script Component
+export function GoogleAnalytics() {
   // Don't render if GA ID is not provided
   if (!GA_MEASUREMENT_ID) {
     return null;
@@ -99,6 +103,9 @@ export function GoogleAnalytics() {
           `,
         }}
       />
+      <Suspense fallback={null}>
+        <PageTracker />
+      </Suspense>
     </>
   );
 }

@@ -138,13 +138,6 @@ export function UserProfile({ className }: { className?: string }) {
           </Link>
         </DropdownMenuItem>
         
-        <DropdownMenuItem className="cursor-pointer" asChild>
-          <Link href="/my-prompts" className="flex items-center gap-2">
-            <FileText className="size-4" />
-            <span>My Prompts</span>
-          </Link>
-        </DropdownMenuItem>
-        
         <DropdownMenuSeparator />
         
         <DropdownMenuItem

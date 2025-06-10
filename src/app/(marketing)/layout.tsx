@@ -50,6 +50,9 @@ export default function MarketingLayout({
               <Link href="/about" className="text-gray-600 hover:text-gray-900 transition-colors font-medium">
                 About
               </Link>
+              <Link href="https://discord.gg/WJDaqEdJRC" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900 transition-colors font-medium">
+                Discord
+              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-4">
@@ -83,7 +86,7 @@ export default function MarketingLayout({
       {/* Footer */}
       <footer className="border-t border-gray-200 bg-gray-50">
         <div className="max-w-5xl mx-auto px-4 lg:px-6 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
             <div>
               <div className="flex items-center gap-3 mb-4">
                 <PromptLogo />
@@ -98,6 +101,21 @@ export default function MarketingLayout({
                 <li><Link href="/" className="text-gray-600 hover:text-gray-900 transition-colors">Prompts</Link></li>
                 <li><Link href="/trending" className="text-gray-600 hover:text-gray-900 transition-colors">Trending</Link></li>
                 <li><Link href="/submit" className="text-gray-600 hover:text-gray-900 transition-colors">Submit Prompt</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4 text-gray-900">Community</h4>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <a 
+                    href="https://discord.gg/WJDaqEdJRC" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-gray-600 hover:text-gray-900 transition-colors"
+                  >
+                    Join Discord
+                  </a>
+                </li>
               </ul>
             </div>
             <div>

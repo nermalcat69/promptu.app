@@ -14,6 +14,7 @@ interface CopyButtonProps {
   size?: "default" | "sm" | "lg" | "icon";
   children?: React.ReactNode;
   showText?: boolean;
+  onCopy?: () => void;
 }
 
 export function CopyButton({ 
@@ -23,7 +24,8 @@ export function CopyButton({
   variant = "default",
   size = "default",
   children,
-  showText = true
+  showText = true,
+  onCopy
 }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
   
@@ -43,12 +45,20 @@ export function CopyButton({
       // Increment copy count if promptSlug is provided
       if (promptSlug) {
         try {
-          await fetch(`/api/prompts/${promptSlug}/copy`, {
+          const response = await fetch(`/api/prompts/${promptSlug}/copy`, {
             method: 'POST',
           });
+          
+          if (response.ok) {
+            // Call the callback to update UI immediately
+            onCopy?.();
+          }
         } catch (error) {
           console.error('Failed to increment copy count:', error);
         }
+      } else {
+        // If no promptSlug, still call onCopy for other uses
+        onCopy?.();
       }
     } catch (error) {
       console.error('Failed to copy to clipboard:', error);
