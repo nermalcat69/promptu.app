@@ -323,6 +323,7 @@ export default function Home() {
                                 size="sm"
                                 showCounts={true}
                                 upvoteOnly={true}
+                                contentType={item.type}
                               />
                             </div>
                           </div>
@@ -377,6 +378,7 @@ export default function Home() {
                               size="sm"
                               showCounts={true}
                               upvoteOnly={true}
+                              contentType={item.type}
                             />
                           </div>
                         </div>
@@ -445,6 +447,7 @@ export default function Home() {
                               size="sm"
                               showCounts={true}
                               upvoteOnly={true}
+                              contentType={item.type}
                             />
                           </div>
                         </div>
