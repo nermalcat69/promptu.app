@@ -37,7 +37,7 @@ zerops:
         NEXT_PUBLIC_GOOGLE_ANALYTICS_ID: G-040GPW5YHK
         NEXT_PUBLIC_GOOGLE_ANALYTICS_STREAM_ID: 11334570600
         DISCORD_WEBHOOK_REGISTRATIONS: https://discord.com/api/webhooks/1381945189559439452/BMJQX2OP1EXI3VZCQHy0qoMpoLF3cQRxZawS_wrPTtDh_FNkiB1PlkYTHJRIuWfP-5kt
-        DISCORD_WEBHOOK_PROMPTS: https://discord.com/api/webhooks/1381948684312383569/eNzSlWBVfSN-AbSErmEvJLT7l56OV_RjoFUcxb6RKLkA2vx
+        DISCORD_WEBHOOK_PROMPTS: https://discord.com/api/webhooks/1381948684312383569/eNzSlWBVfSN-AbSErmEvJLT7l56OV_RjoFUcxb6RKLkA2vxacRAHnKq3a-yGgf5sLm1g
       ports:
         - port: 3000
           httpSupport: true

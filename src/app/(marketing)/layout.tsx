@@ -47,6 +47,9 @@ export default function MarketingLayout({
               <Link href="/cursor-rules" className="text-gray-600 hover:text-gray-900 transition-colors font-medium">
                 Cursor Rules
               </Link>
+              <Link href="/token-calculator" className="text-gray-600 hover:text-gray-900 transition-colors font-medium">
+                Token Calculator
+              </Link>
               <Link href="/prompt-guide" className="text-gray-600 hover:text-gray-900 transition-colors font-medium">
                 Prompt Guide
               </Link>
