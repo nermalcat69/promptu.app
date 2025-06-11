@@ -12,6 +12,7 @@ interface VotingButtonsProps {
   size?: "sm" | "md" | "lg";
   showCounts?: boolean;
   upvoteOnly?: boolean;
+  contentType?: "prompt" | "cursor-rule";
 }
 
 interface VotingState {
@@ -27,7 +28,8 @@ export function VotingButtons({
   className,
   size = "md",
   showCounts = true,
-  upvoteOnly = false
+  upvoteOnly = false,
+  contentType = "prompt"
 }: VotingButtonsProps) {
   const { data: session, isPending } = useSession();
   const [voting, setVoting] = useState<VotingState>({
@@ -44,7 +46,8 @@ export function VotingButtons({
   useEffect(() => {
     const fetchVotingState = async () => {
       try {
-        const response = await fetch(`/api/prompts/${promptSlug}/vote`);
+        const apiPath = contentType === "cursor-rule" ? "cursor-rules" : "prompts";
+        const response = await fetch(`/api/${apiPath}/${promptSlug}/vote`);
         if (response.ok) {
           const data = await response.json();
           setVoting({
@@ -61,7 +64,7 @@ export function VotingButtons({
     };
 
     fetchVotingState();
-  }, [promptSlug]);
+  }, [promptSlug, contentType]);
 
   const handleVote = async (type: "upvote" | "downvote") => {
     // If session is still loading, prevent action
@@ -83,7 +86,8 @@ export function VotingButtons({
     setError(null);
 
     try {
-      const response = await fetch(`/api/prompts/${promptSlug}/vote`, {
+      const apiPath = contentType === "cursor-rule" ? "cursor-rules" : "prompts";
+      const response = await fetch(`/api/${apiPath}/${promptSlug}/vote`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

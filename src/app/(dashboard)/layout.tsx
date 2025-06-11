@@ -17,6 +17,17 @@ export default function DashboardLayout({
             <Link href="/" className="font-bold flex items-center gap-3">
               <span className="text-lg text-gray-900">Promptu</span>
             </Link>
+            <nav className="hidden md:flex gap-6">
+              <Link href="/dashboard" className="text-gray-600 hover:text-gray-900 transition-colors font-medium text-sm">
+                Dashboard
+              </Link>
+              <Link href="/dashboard/prompts" className="text-gray-600 hover:text-gray-900 transition-colors font-medium text-sm">
+                My Prompts
+              </Link>
+              <Link href="/dashboard/cursor-rules" className="text-gray-600 hover:text-gray-900 transition-colors font-medium text-sm">
+                My Cursor Rules
+              </Link>
+            </nav>
           </div>
           <div className="flex items-center gap-4">
             <DashboardNavButtons />

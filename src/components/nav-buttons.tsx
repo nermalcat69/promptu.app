@@ -2,9 +2,15 @@
 
 import React from "react";
 import Link from "next/link";
-import { Plus, User, Settings, LogOut } from "lucide-react";
+import { Plus, User, Settings, LogOut, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserProfile } from "@/components/user-profile";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function MarketingNavButtons() {
   return (
@@ -27,12 +33,29 @@ export function MarketingNavButtons() {
 export function DashboardNavButtons() {
   return (
     <div className="flex items-center gap-3">
-      <Button variant="outline" size="sm" asChild>
-        <Link href="/dashboard/create" className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">Create</span>
-        </Link>
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Create</span>
+            <ChevronDown className="h-3 w-3" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem asChild>
+            <Link href="/dashboard/create" className="flex items-center gap-2 w-full">
+              <Plus className="h-4 w-4" />
+              <span>Prompt</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/dashboard/create-cursor-rule" className="flex items-center gap-2 w-full">
+              <Plus className="h-4 w-4" />
+              <span>Cursor Rule</span>
+            </Link>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
       <Button variant="outline" size="sm" asChild>
         <Link href="/dashboard/settings" className="flex items-center gap-2">
           <Settings className="h-4 w-4" />

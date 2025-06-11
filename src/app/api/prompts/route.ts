@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     
     if (search) {
       conditions.push(
-        sql`(${ilike(prompt.title, `%${search}%`)} OR ${ilike(prompt.excerpt, `%${search}%`)})`
+        ilike(prompt.title, `%${search}%`)
       );
     }
 

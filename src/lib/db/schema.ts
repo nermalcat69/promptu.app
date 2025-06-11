@@ -95,12 +95,46 @@ export const upvote = pgTable("upvote", {
   createdAt: timestamp("created_at").notNull(),
 });
 
+export const cursorRule = pgTable("cursor_rule", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  slug: text("slug").notNull().unique(),
+  description: text("description").notNull(),
+  content: text("content").notNull(),
+  ruleType: text("rule_type").notNull(), // "always", "auto-attached", "agent-requested", "manual"
+  globs: text("globs"), // File patterns for auto-attached rules
+  categoryId: text("category_id").references(() => category.id),
+  authorId: text("author_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  upvotes: integer("upvotes").default(0),
+  views: integer("views").default(0),
+  copyCount: integer("copy_count").default(0),
+  featured: boolean("featured").default(false),
+  published: boolean("published").default(true),
+  createdAt: timestamp("created_at").notNull(),
+  updatedAt: timestamp("updated_at").notNull(),
+});
+
+export const cursorRuleUpvote = pgTable("cursor_rule_upvote", {
+  id: text("id").primaryKey(),
+  cursorRuleId: text("cursor_rule_id")
+    .notNull()
+    .references(() => cursorRule.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").notNull(),
+});
+
 
 
 // Relations
 export const userRelations = relations(user, ({ many }) => ({
   prompts: many(prompt),
   upvotes: many(upvote),
+  cursorRules: many(cursorRule),
+  cursorRuleUpvotes: many(cursorRuleUpvote),
 }));
 
 export const promptRelations = relations(prompt, ({ one, many }) => ({
@@ -117,6 +151,7 @@ export const promptRelations = relations(prompt, ({ one, many }) => ({
 
 export const categoryRelations = relations(category, ({ many }) => ({
   prompts: many(prompt),
+  cursorRules: many(cursorRule),
 }));
 
 export const upvoteRelations = relations(upvote, ({ one }) => ({
@@ -127,6 +162,29 @@ export const upvoteRelations = relations(upvote, ({ one }) => ({
   prompt: one(prompt, {
     fields: [upvote.promptId],
     references: [prompt.id],
+  }),
+}));
+
+export const cursorRuleRelations = relations(cursorRule, ({ one, many }) => ({
+  author: one(user, {
+    fields: [cursorRule.authorId],
+    references: [user.id],
+  }),
+  category: one(category, {
+    fields: [cursorRule.categoryId],
+    references: [category.id],
+  }),
+  upvotes: many(cursorRuleUpvote),
+}));
+
+export const cursorRuleUpvoteRelations = relations(cursorRuleUpvote, ({ one }) => ({
+  user: one(user, {
+    fields: [cursorRuleUpvote.userId],
+    references: [user.id],
+  }),
+  cursorRule: one(cursorRule, {
+    fields: [cursorRuleUpvote.cursorRuleId],
+    references: [cursorRule.id],
   }),
 }));
 

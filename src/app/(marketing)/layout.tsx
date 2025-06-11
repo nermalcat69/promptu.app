@@ -42,7 +42,10 @@ export default function MarketingLayout({
             </Link>
             <nav className="hidden text-sm md:flex gap-6">
               <Link href="/prompts" className="text-gray-600 hover:text-gray-900 transition-colors font-medium">
-                Browse All
+                Prompts
+              </Link>
+              <Link href="/cursor-rules" className="text-gray-600 hover:text-gray-900 transition-colors font-medium">
+                Cursor Rules
               </Link>
               <Link href="/prompt-guide" className="text-gray-600 hover:text-gray-900 transition-colors font-medium">
                 Prompt Guide
@@ -98,13 +101,12 @@ export default function MarketingLayout({
             <div>
               <h4 className="font-semibold mb-4 text-gray-900">Explore</h4>
               <ul className="space-y-2 text-sm">
-                <li><Link href="/" className="text-gray-600 hover:text-gray-900 transition-colors">Prompts</Link></li>
-                <li><Link href="/trending" className="text-gray-600 hover:text-gray-900 transition-colors">Trending</Link></li>
-                <li><Link href="/submit" className="text-gray-600 hover:text-gray-900 transition-colors">Submit Prompt</Link></li>
+                <li><Link href="/prompts" className="text-gray-600 hover:text-gray-900 transition-colors">Prompts</Link></li>
+                <li><Link href="/cursor-rules" className="text-gray-600 hover:text-gray-900 transition-colors">Cursor Rules</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-4 text-gray-900">Community</h4>
+              <h4 className="font-semibold mb-4 text-gray-900">Other Links</h4>
               <ul className="space-y-2 text-sm">
                 <li>
                   <a 
@@ -114,6 +116,26 @@ export default function MarketingLayout({
                     className="text-gray-600 hover:text-gray-900 transition-colors"
                   >
                     Join Discord
+                  </a>
+                </li>
+                <li>
+                <a 
+                    href="https://x.com/PromptuDev" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-gray-600 hover:text-gray-900 transition-colors"
+                  >
+                    Twitter / X
+                  </a>
+                </li>
+                <li>
+                <a 
+                    href="https://x.com/arjvnz" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-gray-600 hover:text-gray-900 transition-colors"
+                  >
+                    Arjun Aditya
                   </a>
                 </li>
               </ul>

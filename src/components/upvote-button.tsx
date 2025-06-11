@@ -9,18 +9,20 @@ interface UpvoteButtonProps {
   promptSlug: string;
   initialUpvotes: number;
   className?: string;
+  contentType?: "prompt" | "cursor-rule";
 }
 
-export function UpvoteButton({ promptSlug, initialUpvotes, className }: UpvoteButtonProps) {
+export function UpvoteButton({ promptSlug, initialUpvotes, className, contentType = "prompt" }: UpvoteButtonProps) {
   const { data: session, isPending } = useSession();
   const [upvoted, setUpvoted] = useState(false);
   const [upvotes, setUpvotes] = useState(initialUpvotes);
   const [loading, setLoading] = useState(false);
 
-  // Check if user has upvoted this prompt
+  // Check if user has upvoted this content
   useEffect(() => {
     if (session?.user) {
-      fetch(`/api/prompts/${promptSlug}/vote`)
+      const apiPath = contentType === "cursor-rule" ? "cursor-rules" : "prompts";
+      fetch(`/api/${apiPath}/${promptSlug}/vote`)
         .then(res => res.json())
         .then(data => {
           if (data.upvoted !== undefined) {
@@ -30,7 +32,7 @@ export function UpvoteButton({ promptSlug, initialUpvotes, className }: UpvoteBu
         })
         .catch(console.error);
     }
-  }, [promptSlug, session, initialUpvotes]);
+  }, [promptSlug, session, initialUpvotes, contentType]);
 
   const handleUpvote = async () => {
     // If session is still loading, prevent action
@@ -51,7 +53,8 @@ export function UpvoteButton({ promptSlug, initialUpvotes, className }: UpvoteBu
     setLoading(true);
     
     try {
-      const response = await fetch(`/api/prompts/${promptSlug}/vote`, {
+      const apiPath = contentType === "cursor-rule" ? "cursor-rules" : "prompts";
+      const response = await fetch(`/api/${apiPath}/${promptSlug}/vote`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
