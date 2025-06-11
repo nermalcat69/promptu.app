@@ -262,7 +262,7 @@ export default function PromptPage() {
                     <Copy className="h-4 w-4" />
                     <span>{copyCount}</span>
                   </div>
-                  <span className="font-mono">{formatTokenCount(tokens)}</span>
+                  <span className="font-mono">{formatTokenCount(tokens)} Tokens</span>
                 </div>
               </div>
             </div>
