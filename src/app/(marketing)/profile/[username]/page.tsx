@@ -96,7 +96,7 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
       images: userData.image ? [userData.image] : [],
     },
     alternates: {
-      canonical: `https://promptu.space/profile/${userData.username}`,
+      canonical: `https://promptu.dev/profile/${userData.username}`,
     },
   };
 }

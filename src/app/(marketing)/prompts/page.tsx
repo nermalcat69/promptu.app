@@ -95,7 +95,7 @@ export default function PromptsPage() {
       setLoading(false);
       setInitialLoad(false);
     }
-  }, [filters, loading]);
+  }, [filters.search, filters.type, filters.sort, filters.category]);
 
   // Load more prompts when scrolling to bottom
   const loadMore = useCallback(() => {
@@ -127,12 +127,19 @@ export default function PromptsPage() {
   }, [loadMore]);
 
   // Handle filter changes
-  const handleFiltersChange = (newFilters: typeof filters) => {
+  const handleFiltersChange = useCallback((newFilters: typeof filters) => {
     setFilters(newFilters);
     setCurrentPage(1);
     setHasMore(true);
-    fetchPrompts(1, true);
-  };
+    // Don't call fetchPrompts here directly, let useEffect handle it
+  }, []);
+
+  // Watch for filter changes and fetch prompts
+  useEffect(() => {
+    if (!initialLoad) {
+      fetchPrompts(1, true);
+    }
+  }, [filters.search, filters.type, filters.sort, filters.category]);
 
   // Initial load
   useEffect(() => {
@@ -345,7 +352,7 @@ export default function PromptsPage() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Avatar className="h-6 w-6">
-                            <AvatarImage src={prompt.author.image} alt={prompt.author.name} />
+                            <AvatarImage src={prompt.author.image || undefined} alt={prompt.author.name} />
                             <AvatarFallback className="text-xs bg-gray-100">
                               {prompt.author.name.split(' ').map(n => n[0]).join('')}
                             </AvatarFallback>
@@ -398,7 +405,7 @@ export default function PromptsPage() {
                       <div className="col-span-2">
                         <div className="flex items-center gap-2">
                           <Avatar className="h-6 w-6">
-                            <AvatarImage src={prompt.author.image} alt={prompt.author.name} />
+                            <AvatarImage src={prompt.author.image || undefined} alt={prompt.author.name} />
                             <AvatarFallback className="text-xs bg-gray-100">
                               {prompt.author.name.split(' ').map(n => n[0]).join('')}
                             </AvatarFallback>
@@ -450,7 +457,7 @@ export default function PromptsPage() {
                       <div className="col-span-2">
                         <div className="flex items-center gap-2">
                           <Avatar className="h-6 w-6">
-                            <AvatarImage src={prompt.author.image} alt={prompt.author.name} />
+                            <AvatarImage src={prompt.author.image || undefined} alt={prompt.author.name} />
                             <AvatarFallback className="text-xs bg-gray-100">
                               {prompt.author.name.split(' ').map(n => n[0]).join('')}
                             </AvatarFallback>

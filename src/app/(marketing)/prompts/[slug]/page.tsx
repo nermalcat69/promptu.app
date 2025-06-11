@@ -269,9 +269,11 @@ export default function PromptPage() {
 
             {/* Content */}
             <div className="bg-white rounded-lg border border-gray-200 p-8">
-              <pre className="whitespace-pre-wrap font-mono text-sm text-gray-900 leading-relaxed">
-                {prompt.content}
-              </pre>
+              <div className="min-h-[100px] max-h-[400px] overflow-y-auto scrollbar-visible border border-gray-100 rounded-md p-4" style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e1 #f1f5f9' }}>
+                <pre className="whitespace-pre-wrap font-mono text-sm text-gray-900 leading-relaxed">
+                  {prompt.content}
+                </pre>
+              </div>
             </div>
           </div>
 

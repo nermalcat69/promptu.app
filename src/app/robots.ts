@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/api/', '/dashboard/', '/onboarding/', '/_next/'],
     },
-    sitemap: 'https://promptu.space/sitemap.xml',
+    sitemap: 'https://promptu.dev/sitemap.xml',
   }
 } 

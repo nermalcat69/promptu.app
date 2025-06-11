@@ -24,7 +24,7 @@ export const PROMPT_VALIDATION_RULES: PromptValidationRules = {
   },
   content: {
     minLength: 80, // As requested by user
-    maxLength: 30000, // Increased from 10000 to allow for more detailed prompts
+    maxLength: 10000, // Set to 10,000 characters as requested
   },
 };
 
