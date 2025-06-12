@@ -1,14 +1,16 @@
-"use client";
-
-import { useState, useEffect, useCallback, useRef, Suspense } from "react";
+import { Suspense } from "react";
+import { db } from "@/lib/db";
+import { prompt, category, user } from "@/lib/db/schema";
+import { eq, desc, sql, ilike, and } from "drizzle-orm";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Copy, Loader2 } from "lucide-react";
+import { Copy } from "lucide-react";
 import Link from "next/link";
 import { calculatePromptTokens, formatTokenCount } from "@/lib/token-calculator";
 import { UpvoteButton } from "@/components/upvote-button";
 import { PromptFilters } from "@/components/prompt-filters";
+import { PromptsClientList } from "@/components/prompts-client-list";
+import type { Metadata } from "next";
 
 interface PromptData {
   id: string;
@@ -44,112 +46,136 @@ function getPromptTypeColor(type: string) {
   }
 }
 
-export default function PromptsPage() {
-  const [prompts, setPrompts] = useState<PromptData[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [filters, setFilters] = useState({
-    search: '',
-    type: 'all',
-    sort: 'recent',
-    category: 'all',
-  });
-  const [initialLoad, setInitialLoad] = useState(true);
+async function getPrompts(searchParams: { [key: string]: string | string[] | undefined }) {
+  const page = parseInt((searchParams.page as string) || "1");
+  const limit = parseInt((searchParams.limit as string) || "12");
+  const type = searchParams.type as string;
+  const categorySlug = searchParams.category as string;
+  const search = searchParams.search as string;
+  const sort = (searchParams.sort as string) || "recent";
+
+  const offset = (page - 1) * limit;
+
+  // Build query conditions
+  const conditions = [];
   
-  const observerRef = useRef<IntersectionObserver | null>(null);
-  const loadingRef = useRef<HTMLDivElement>(null);
-
-  const fetchPrompts = useCallback(async (page: number, reset = false) => {
-    if (loading) return;
-    
-    try {
-      setLoading(true);
-      
-      const params = new URLSearchParams();
-      if (filters.search) params.set('search', filters.search);
-      if (filters.type && filters.type !== 'all') params.set('type', filters.type);
-      if (filters.sort && filters.sort !== 'recent') params.set('sort', filters.sort);
-      if (filters.category && filters.category !== 'all') params.set('category', filters.category);
-      params.set('page', page.toString());
-      params.set('limit', '12');
-
-      const response = await fetch(`/api/prompts?${params.toString()}`);
-      
-      if (response.ok) {
-        const data = await response.json();
-        const newPrompts = data.prompts || [];
-        
-        if (reset) {
-          setPrompts(newPrompts);
-        } else {
-          setPrompts(prev => [...prev, ...newPrompts]);
-        }
-        
-        setHasMore(data.pagination?.hasNext || false);
-        setCurrentPage(page);
-      }
-    } catch (error) {
-      console.error('Error fetching prompts:', error);
-    } finally {
-      setLoading(false);
-      setInitialLoad(false);
+  if (type && type !== "all") {
+    conditions.push(eq(prompt.promptType, type));
+  }
+  
+  if (categorySlug && categorySlug !== "all") {
+    const categoryResult = await db.select().from(category).where(eq(category.slug, categorySlug)).limit(1);
+    if (categoryResult[0]) {
+      conditions.push(eq(prompt.categoryId, categoryResult[0].id));
     }
-  }, [filters.search, filters.type, filters.sort, filters.category]);
+  }
+  
+  if (search) {
+    conditions.push(
+      ilike(prompt.title, `%${search}%`)
+    );
+  }
 
-  // Load more prompts when scrolling to bottom
-  const loadMore = useCallback(() => {
-    if (hasMore && !loading) {
-      fetchPrompts(currentPage + 1);
-    }
-  }, [hasMore, loading, currentPage, fetchPrompts]);
+  // Add published filter
+  conditions.push(eq(prompt.published, true));
 
-  // Set up intersection observer for infinite scroll
-  useEffect(() => {
-    if (loadingRef.current) {
-      observerRef.current = new IntersectionObserver(
-        (entries) => {
-          if (entries[0].isIntersecting) {
-            loadMore();
-          }
-        },
-        { threshold: 0.1 }
-      );
-      
-      observerRef.current.observe(loadingRef.current);
-    }
-    
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
-    };
-  }, [loadMore]);
+  // Build sort order
+  let orderBy;
+  switch (sort) {
+    case "popular":
+      orderBy = desc(prompt.views);
+      break;
+    case "upvotes":
+      orderBy = desc(prompt.upvotes);
+      break;
+    default:
+      orderBy = desc(prompt.createdAt);
+  }
 
-  // Handle filter changes
-  const handleFiltersChange = useCallback((newFilters: typeof filters) => {
-    setFilters(newFilters);
-    setCurrentPage(1);
-    setHasMore(true);
-    // Don't call fetchPrompts here directly, let useEffect handle it
-  }, []);
+  // Execute query
+  const prompts = await db
+    .select({
+      id: prompt.id,
+      title: prompt.title,
+      slug: prompt.slug,
+      excerpt: prompt.excerpt,
+      content: prompt.content,
+      promptType: prompt.promptType,
+      upvotes: prompt.upvotes,
+      views: prompt.views,
+      copyCount: prompt.copyCount,
+      featured: prompt.featured,
+      createdAt: prompt.createdAt,
+      author: {
+        id: user.id,
+        name: user.name,
+        image: user.image,
+        username: user.username,
+      },
+      category: {
+        id: category.id,
+        name: category.name,
+        slug: category.slug,
+      },
+    })
+    .from(prompt)
+    .leftJoin(user, eq(prompt.authorId, user.id))
+    .leftJoin(category, eq(prompt.categoryId, category.id))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(orderBy)
+    .limit(limit)
+    .offset(offset);
 
-  // Watch for filter changes and fetch prompts
-  useEffect(() => {
-    if (!initialLoad) {
-      fetchPrompts(1, true);
-    }
-  }, [filters.search, filters.type, filters.sort, filters.category]);
+  // Get total count for pagination
+  const totalResult = await db
+    .select({ count: sql`count(*)` })
+    .from(prompt)
+    .leftJoin(category, eq(prompt.categoryId, category.id))
+    .where(conditions.length > 0 ? and(...conditions) : undefined);
 
-  // Initial load
-  useEffect(() => {
-    fetchPrompts(1, true);
-  }, []);
+  const total = Number(totalResult[0]?.count || 0);
+  const totalPages = Math.ceil(total / limit);
 
-  const promptsWithTokens = prompts.map(prompt => ({
+  return {
+    prompts,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
+    },
+  };
+}
+
+export const metadata: Metadata = {
+  title: "All AI Prompts - Promptu",
+  description: "Browse through our complete collection of AI prompts. Use filters to find exactly what you need.",
+  keywords: ["AI prompts", "system prompts", "user prompts", "developer prompts", "browse prompts"],
+};
+
+export default async function PromptsPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
+  // Get initial data server-side
+  const initialData = await getPrompts(searchParams);
+  
+  // Process prompts with tokens
+  const promptsWithTokens = initialData.prompts.map(prompt => ({
     ...prompt,
-    tokens: calculatePromptTokens(prompt.title, prompt.excerpt, prompt.content).tokens
+    tokens: calculatePromptTokens(prompt.title, prompt.excerpt, prompt.content).tokens,
+    category: prompt.category?.name || "Uncategorized",
   }));
+
+  const initialFilters = {
+    search: (searchParams.search as string) || '',
+    type: (searchParams.type as string) || 'all',
+    sort: (searchParams.sort as string) || 'recent',
+    category: (searchParams.category as string) || 'all',
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -180,123 +206,12 @@ export default function PromptsPage() {
             </div>
           }>
             <PromptFilters 
-              onFiltersChange={handleFiltersChange}
-              initialFilters={filters}
+              initialFilters={initialFilters}
             />
           </Suspense>
-          
 
-
-          {/* Prompts Grid */}
-          {initialLoad ? (
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-              {/* Desktop Table Header - Hidden on mobile/tablet */}
-              <div className="hidden lg:block border-b border-gray-200 bg-gray-50">
-                <div className="grid grid-cols-12 gap-4 px-4 py-3">
-                  <div className="col-span-5 h-4 bg-gray-200 rounded animate-pulse"></div>
-                  <div className="col-span-2 h-4 bg-gray-200 rounded animate-pulse"></div>
-                  <div className="col-span-1 h-4 bg-gray-200 rounded animate-pulse"></div>
-                  <div className="col-span-2 h-4 bg-gray-200 rounded animate-pulse"></div>
-                  <div className="col-span-2 h-4 bg-gray-200 rounded animate-pulse"></div>
-                </div>
-              </div>
-
-              {/* Medium Screen Table Header - Hidden on mobile and desktop */}
-              <div className="hidden md:block lg:hidden border-b border-gray-200 bg-gray-50">
-                <div className="grid grid-cols-10 gap-4 px-4 py-3">
-                  <div className="col-span-4 h-4 bg-gray-200 rounded animate-pulse"></div>
-                  <div className="col-span-2 h-4 bg-gray-200 rounded animate-pulse"></div>
-                  <div className="col-span-2 h-4 bg-gray-200 rounded animate-pulse"></div>
-                  <div className="col-span-2 h-4 bg-gray-200 rounded animate-pulse"></div>
-                </div>
-              </div>
-
-              {/* Skeleton Rows */}
-              <div className="divide-y divide-gray-200">
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                  <div key={i} className="animate-pulse">
-                    {/* Mobile Layout Skeleton */}
-                    <div className="block md:hidden p-4 space-y-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
-                          <div className="h-4 w-3/4 bg-gray-200 rounded mb-1"></div>
-                        </div>
-                        <div className="h-6 w-16 bg-gray-200 rounded-full"></div>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="h-6 w-6 bg-gray-200 rounded-full"></div>
-                          <div className="h-4 w-20 bg-gray-200 rounded"></div>
-                        </div>
-                        
-                        <div className="flex items-center gap-3">
-                          <div className="h-4 w-12 bg-gray-200 rounded"></div>
-                          <div className="h-6 w-12 bg-gray-200 rounded"></div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center justify-end">
-                        <div className="h-4 w-8 bg-gray-200 rounded"></div>
-                      </div>
-                    </div>
-
-                    {/* Medium Screen Layout Skeleton */}
-                    <div className="hidden md:grid lg:hidden grid-cols-10 gap-2 px-4 py-3">
-                      <div className="col-span-4 space-y-2">
-                        <div className="h-4 w-3/4 bg-gray-200 rounded"></div>
-                        <div className="h-4 w-16 bg-gray-200 rounded"></div>
-                      </div>
-                      
-                      <div className="col-span-2 flex items-center gap-2">
-                        <div className="h-6 w-6 bg-gray-200 rounded-full"></div>
-                        <div className="h-4 w-16 bg-gray-200 rounded"></div>
-                      </div>
-                      
-                      <div className="col-span-2">
-                        <div className="h-6 w-12 bg-gray-200 rounded"></div>
-                      </div>
-                      
-                      <div className="col-span-2">
-                        <div className="h-4 w-8 bg-gray-200 rounded"></div>
-                      </div>
-                    </div>
-
-                    {/* Desktop Layout Skeleton */}
-                    <div className="hidden lg:grid grid-cols-12 gap-4 px-4 py-3">
-                      <div className="col-span-5 flex items-center gap-3">
-                        <div className="flex-1 space-y-1">
-                          <div className="h-4 w-3/4 bg-gray-200 rounded"></div>
-                          <div className="h-3 w-full bg-gray-200 rounded"></div>
-                        </div>
-                        <div className="h-6 w-16 bg-gray-200 rounded-full"></div>
-                      </div>
-                      
-                      <div className="col-span-2 flex items-center gap-2">
-                        <div className="h-6 w-6 bg-gray-200 rounded-full"></div>
-                        <div className="space-y-1">
-                          <div className="h-4 w-16 bg-gray-200 rounded"></div>
-                          <div className="h-3 w-12 bg-gray-200 rounded"></div>
-                        </div>
-                      </div>
-                      
-                      <div className="col-span-1">
-                        <div className="h-4 w-12 bg-gray-200 rounded"></div>
-                      </div>
-                      
-                      <div className="col-span-2">
-                        <div className="h-6 w-12 bg-gray-200 rounded"></div>
-                      </div>
-                      
-                      <div className="col-span-2">
-                        <div className="h-4 w-8 bg-gray-200 rounded"></div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : promptsWithTokens.length === 0 ? (
+          {/* Initial Prompts Display */}
+          {promptsWithTokens.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-600 mb-4">
                 No prompts found matching your criteria.
@@ -364,10 +279,10 @@ export default function PromptsPage() {
                           <span className="text-xs text-gray-500 font-mono">
                             {formatTokenCount(prompt.tokens)}
                           </span>
-                                                     <UpvoteButton 
-                             promptSlug={prompt.slug}
-                             initialUpvotes={prompt.upvotes || 0}
-                           />
+                          <UpvoteButton 
+                            promptSlug={prompt.slug}
+                            initialUpvotes={prompt.upvotes || 0}
+                          />
                         </div>
                       </div>
                       
@@ -414,24 +329,24 @@ export default function PromptsPage() {
                         </div>
                       </div>
                       
-                                             {/* Votes Column */}
-                       <div className="col-span-2">
-                         <UpvoteButton 
-                           promptSlug={prompt.slug}
-                           initialUpvotes={prompt.upvotes || 0}
-                         />
-                       </div>
-                       
-                       {/* Copies Column */}
-                       <div className="col-span-2">
-                         <div className="flex items-center gap-1 text-sm text-gray-500">
-                           <Copy className="h-3 w-3" />
-                           <span>{prompt.copyCount || 0}</span>
-                         </div>
-                       </div>
-                     </div>
+                      {/* Votes Column */}
+                      <div className="col-span-2">
+                        <UpvoteButton 
+                          promptSlug={prompt.slug}
+                          initialUpvotes={prompt.upvotes || 0}
+                        />
+                      </div>
+                      
+                      {/* Copies Column */}
+                      <div className="col-span-2">
+                        <div className="flex items-center gap-1 text-sm text-gray-500">
+                          <Copy className="h-3 w-3" />
+                          <span>{prompt.copyCount || 0}</span>
+                        </div>
+                      </div>
+                    </div>
 
-                     {/* Desktop Layout (lg+) */}
+                    {/* Desktop Layout (lg+) */}
                     <div className="hidden lg:grid grid-cols-12 gap-4 px-4 py-3">
                       {/* Name Column */}
                       <div className="col-span-5">
@@ -480,46 +395,36 @@ export default function PromptsPage() {
                         </span>
                       </div>
                       
-                                             {/* Votes Column */}
-                       <div className="col-span-2">
-                         <UpvoteButton 
-                           promptSlug={prompt.slug}
-                           initialUpvotes={prompt.upvotes || 0}
-                         />
-                       </div>
-                       
-                       {/* Copies Column */}
-                       <div className="col-span-2">
-                         <div className="flex items-center gap-1 text-sm text-gray-500">
-                           <Copy className="h-3 w-3" />
-                           <span>{prompt.copyCount || 0}</span>
-                         </div>
-                       </div>
-                     </div>
-                   </div>
-                 ))}
-               </div>
-             </div>
-           )}
-
-           {/* Loading indicator for infinite scroll */}
-          {!initialLoad && hasMore && (
-            <div ref={loadingRef} className="flex justify-center py-8">
-              {loading && (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                  <span className="text-gray-600">Loading more prompts...</span>
-                </div>
-              )}
+                      {/* Votes Column */}
+                      <div className="col-span-2">
+                        <UpvoteButton 
+                          promptSlug={prompt.slug}
+                          initialUpvotes={prompt.upvotes || 0}
+                        />
+                      </div>
+                      
+                      {/* Copies Column */}
+                      <div className="col-span-2">
+                        <div className="flex items-center gap-1 text-sm text-gray-500">
+                          <Copy className="h-3 w-3" />
+                          <span>{prompt.copyCount || 0}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
-          {/* End of results */}
-          {!initialLoad && !hasMore && promptsWithTokens.length > 0 && (
-            <div className="text-center py-8">
-              <p className="text-gray-500">You've reached the end of the prompts!</p>
-            </div>
-          )}
+          {/* Client-side Infinite Scroll Component */}
+          <Suspense fallback={null}>
+            <PromptsClientList 
+              initialData={promptsWithTokens}
+              initialPagination={initialData.pagination}
+              initialFilters={initialFilters}
+            />
+          </Suspense>
         </div>
       </div>
     </div>
