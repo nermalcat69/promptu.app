@@ -10,29 +10,8 @@ import { calculatePromptTokens, formatTokenCount } from "@/lib/token-calculator"
 import { UpvoteButton } from "@/components/upvote-button";
 import { CursorRuleFilters } from "@/components/cursor-rule-filters";
 import { CursorRulesClientList } from "@/components/cursor-rules-client-list";
+import { CursorRuleData } from "@/lib/types";
 import type { Metadata } from "next";
-
-interface CursorRuleData {
-  id: string;
-  title: string;
-  slug: string;
-  description: string;
-  content: string;
-  ruleType: string;
-  globs?: string;
-  category: string;
-  author: {
-    id: string;
-    name: string;
-    image?: string;
-    username?: string;
-  };
-  upvotes: number;
-  views: number;
-  copyCount: number;
-  createdAt: string;
-  updatedAt: string;
-}
 
 function getRuleTypeColor(type: string) {
   switch (type) {
@@ -162,23 +141,33 @@ export const metadata: Metadata = {
 export default async function CursorRulesPage({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
+  // Await searchParams in Next.js 15
+  const resolvedSearchParams = await searchParams;
+  
   // Get initial data server-side
-  const initialData = await getCursorRules(searchParams);
+  const initialData = await getCursorRules(resolvedSearchParams);
   
   // Process rules with tokens
-  const rulesWithTokens = initialData.cursorRules.map(rule => ({
+  const rulesWithTokens: CursorRuleData[] = initialData.cursorRules.map(rule => ({
     ...rule,
     tokens: calculatePromptTokens(rule.title, rule.description, rule.content).tokens,
     category: rule.category?.name || "Uncategorized",
+    updatedAt: rule.createdAt, // Add missing updatedAt field
+    author: rule.author ? {
+      id: rule.author.id,
+      name: rule.author.name,
+      image: rule.author.image,
+      username: rule.author.username,
+    } : null,
   }));
 
   const initialFilters = {
-    search: (searchParams.search as string) || '',
-    type: (searchParams.type as string) || 'all',
-    sort: (searchParams.sort as string) || 'recent',
-    category: (searchParams.category as string) || 'all',
+    search: (resolvedSearchParams.search as string) || '',
+    type: (resolvedSearchParams.type as string) || 'all',
+    sort: (resolvedSearchParams.sort as string) || 'recent',
+    category: (resolvedSearchParams.category as string) || 'all',
   };
 
   const handleCopyRule = async (rule: CursorRuleData) => {
@@ -269,15 +258,15 @@ export default async function CursorRulesPage({
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2">
                         <Avatar className="h-5 w-5">
-                          <AvatarImage src={rule.author.image || undefined} alt={rule.author.name} />
+                          <AvatarImage src={rule.author?.image || undefined} alt={rule.author?.name || 'Anonymous'} />
                           <AvatarFallback className="text-xs bg-gray-100">
-                            {rule.author.name.split(' ').map(n => n[0]).join('')}
+                            {rule.author?.name.split(' ').map(n => n[0]).join('') || 'A'}
                           </AvatarFallback>
                         </Avatar>
-                        <span>{rule.author.name}</span>
+                        <span>{rule.author?.name || 'Anonymous'}</span>
                       </div>
                       <span className="font-mono">
-                        {formatTokenCount(rule.tokens)}
+                        {formatTokenCount(rule.tokens || 0)}
                       </span>
                     </div>
                     <div className="flex items-center gap-3">

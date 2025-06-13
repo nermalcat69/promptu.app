@@ -10,28 +10,8 @@ import { calculatePromptTokens, formatTokenCount } from "@/lib/token-calculator"
 import { UpvoteButton } from "@/components/upvote-button";
 import { PromptFilters } from "@/components/prompt-filters";
 import { PromptsClientList } from "@/components/prompts-client-list";
+import { PromptData } from "@/lib/types";
 import type { Metadata } from "next";
-
-interface PromptData {
-  id: string;
-  title: string;
-  slug: string;
-  excerpt: string;
-  content: string;
-  promptType: string;
-  category: string;
-  author: {
-    id: string;
-    name: string;
-    image?: string;
-    username?: string;
-  };
-  upvotes: number;
-  views: number;
-  copyCount: number;
-  createdAt: string;
-  updatedAt: string;
-}
 
 function getPromptTypeColor(type: string) {
   switch (type) {
@@ -158,23 +138,27 @@ export const metadata: Metadata = {
 export default async function PromptsPage({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
+  // Await searchParams in Next.js 15
+  const resolvedSearchParams = await searchParams;
+  
   // Get initial data server-side
-  const initialData = await getPrompts(searchParams);
+  const initialData = await getPrompts(resolvedSearchParams);
   
   // Process prompts with tokens
-  const promptsWithTokens = initialData.prompts.map(prompt => ({
+  const promptsWithTokens: PromptData[] = initialData.prompts.map(prompt => ({
     ...prompt,
     tokens: calculatePromptTokens(prompt.title, prompt.excerpt, prompt.content).tokens,
     category: prompt.category?.name || "Uncategorized",
+    updatedAt: prompt.createdAt, // Add missing updatedAt field
   }));
 
   const initialFilters = {
-    search: (searchParams.search as string) || '',
-    type: (searchParams.type as string) || 'all',
-    sort: (searchParams.sort as string) || 'recent',
-    category: (searchParams.category as string) || 'all',
+    search: (resolvedSearchParams.search as string) || '',
+    type: (resolvedSearchParams.type as string) || 'all',
+    sort: (resolvedSearchParams.sort as string) || 'recent',
+    category: (resolvedSearchParams.category as string) || 'all',
   };
 
   return (
@@ -267,17 +251,17 @@ export default async function PromptsPage({
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Avatar className="h-6 w-6">
-                            <AvatarImage src={prompt.author.image || undefined} alt={prompt.author.name} />
+                            <AvatarImage src={prompt.author?.image || undefined} alt={prompt.author?.name || 'Anonymous'} />
                             <AvatarFallback className="text-xs bg-gray-100">
-                              {prompt.author.name.split(' ').map(n => n[0]).join('')}
+                              {prompt.author?.name?.split(' ').map(n => n[0]).join('') || 'A'}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="text-sm text-gray-600">{prompt.author.name}</span>
+                          <span className="text-sm text-gray-600">{prompt.author?.name || 'Anonymous'}</span>
                         </div>
                         
                         <div className="flex items-center gap-3">
                           <span className="text-xs text-gray-500 font-mono">
-                            {formatTokenCount(prompt.tokens)}
+                            {formatTokenCount(prompt.tokens || 0)}
                           </span>
                           <UpvoteButton 
                             promptSlug={prompt.slug}
@@ -318,15 +302,15 @@ export default async function PromptsPage({
                       
                       {/* Author Column */}
                       <div className="col-span-2">
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src={prompt.author.image || undefined} alt={prompt.author.name} />
-                            <AvatarFallback className="text-xs bg-gray-100">
-                              {prompt.author.name.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="text-sm text-gray-600 truncate">{prompt.author.name}</span>
-                        </div>
+                                              <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={prompt.author?.image || undefined} alt={prompt.author?.name || 'Anonymous'} />
+                          <AvatarFallback className="text-xs bg-gray-100">
+                            {prompt.author?.name?.split(' ').map(n => n[0]).join('') || 'A'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm text-gray-600 truncate">{prompt.author?.name || 'Anonymous'}</span>
+                      </div>
                       </div>
                       
                       {/* Votes Column */}
@@ -372,14 +356,14 @@ export default async function PromptsPage({
                       <div className="col-span-2">
                         <div className="flex items-center gap-2">
                           <Avatar className="h-6 w-6">
-                            <AvatarImage src={prompt.author.image || undefined} alt={prompt.author.name} />
+                            <AvatarImage src={prompt.author?.image || undefined} alt={prompt.author?.name || 'Anonymous'} />
                             <AvatarFallback className="text-xs bg-gray-100">
-                              {prompt.author.name.split(' ').map(n => n[0]).join('')}
+                              {prompt.author?.name?.split(' ').map(n => n[0]).join('') || 'A'}
                             </AvatarFallback>
                           </Avatar>
                           <div className="min-w-0 flex-1">
-                            <span className="text-sm text-gray-600 truncate block">{prompt.author.name}</span>
-                            {prompt.author.username && (
+                            <span className="text-sm text-gray-600 truncate block">{prompt.author?.name || 'Anonymous'}</span>
+                            {prompt.author?.username && (
                               <Link href={`/profile/${prompt.author.username}`} className="text-xs text-blue-600 hover:text-blue-800">
                                 @{prompt.author.username}
                               </Link>
@@ -391,7 +375,7 @@ export default async function PromptsPage({
                       {/* Tokens Column */}
                       <div className="col-span-1">
                         <span className="text-sm text-gray-500 font-mono">
-                          {formatTokenCount(prompt.tokens)}
+                          {formatTokenCount(prompt.tokens || 0)}
                         </span>
                       </div>
                       

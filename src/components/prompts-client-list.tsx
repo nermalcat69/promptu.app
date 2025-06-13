@@ -8,37 +8,7 @@ import Link from "next/link";
 import { formatTokenCount } from "@/lib/token-calculator";
 import { UpvoteButton } from "@/components/upvote-button";
 import { useSearchParams } from "next/navigation";
-
-interface PromptData {
-  id: string;
-  title: string;
-  slug: string;
-  excerpt: string;
-  content: string;
-  promptType: string;
-  category: string;
-  author: {
-    id: string;
-    name: string;
-    image?: string;
-    username?: string;
-  };
-  upvotes: number;
-  views: number;
-  copyCount: number;
-  createdAt: string;
-  updatedAt: string;
-  tokens: number;
-}
-
-interface Pagination {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-}
+import { PromptData, Pagination } from "@/lib/types";
 
 interface PromptsClientListProps {
   initialData: PromptData[];
@@ -188,17 +158,17 @@ export function PromptsClientList({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Avatar className="h-6 w-6">
-                        <AvatarImage src={prompt.author.image || undefined} alt={prompt.author.name} />
+                        <AvatarImage src={prompt.author?.image || undefined} alt={prompt.author?.name || 'Anonymous'} />
                         <AvatarFallback className="text-xs bg-gray-100">
-                          {prompt.author.name.split(' ').map(n => n[0]).join('')}
+                          {prompt.author?.name?.split(' ').map(n => n[0]).join('') || 'A'}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="text-sm text-gray-600">{prompt.author.name}</span>
+                      <span className="text-sm text-gray-600">{prompt.author?.name || 'Anonymous'}</span>
                     </div>
                     
                     <div className="flex items-center gap-3">
                       <span className="text-xs text-gray-500 font-mono">
-                        {formatTokenCount(prompt.tokens)}
+                        {formatTokenCount(prompt.tokens || 0)}
                       </span>
                       <UpvoteButton 
                         promptSlug={prompt.slug}
@@ -241,12 +211,12 @@ export function PromptsClientList({
                   <div className="col-span-2">
                     <div className="flex items-center gap-2">
                       <Avatar className="h-6 w-6">
-                        <AvatarImage src={prompt.author.image || undefined} alt={prompt.author.name} />
+                        <AvatarImage src={prompt.author?.image || undefined} alt={prompt.author?.name || 'Anonymous'} />
                         <AvatarFallback className="text-xs bg-gray-100">
-                          {prompt.author.name.split(' ').map(n => n[0]).join('')}
+                          {prompt.author?.name?.split(' ').map(n => n[0]).join('') || 'A'}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="text-sm text-gray-600 truncate">{prompt.author.name}</span>
+                      <span className="text-sm text-gray-600 truncate">{prompt.author?.name || 'Anonymous'}</span>
                     </div>
                   </div>
                   
@@ -293,14 +263,14 @@ export function PromptsClientList({
                   <div className="col-span-2">
                     <div className="flex items-center gap-2">
                       <Avatar className="h-6 w-6">
-                        <AvatarImage src={prompt.author.image || undefined} alt={prompt.author.name} />
+                        <AvatarImage src={prompt.author?.image || undefined} alt={prompt.author?.name || 'Anonymous'} />
                         <AvatarFallback className="text-xs bg-gray-100">
-                          {prompt.author.name.split(' ').map(n => n[0]).join('')}
+                          {prompt.author?.name?.split(' ').map(n => n[0]).join('') || 'A'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1">
-                        <span className="text-sm text-gray-600 truncate block">{prompt.author.name}</span>
-                        {prompt.author.username && (
+                        <span className="text-sm text-gray-600 truncate block">{prompt.author?.name || 'Anonymous'}</span>
+                        {prompt.author?.username && (
                           <Link href={`/profile/${prompt.author.username}`} className="text-xs text-blue-600 hover:text-blue-800">
                             @{prompt.author.username}
                           </Link>
@@ -312,7 +282,7 @@ export function PromptsClientList({
                   {/* Tokens Column */}
                   <div className="col-span-1">
                     <span className="text-sm text-gray-500 font-mono">
-                      {formatTokenCount(prompt.tokens)}
+                      {formatTokenCount(prompt.tokens || 0)}
                     </span>
                   </div>
                   

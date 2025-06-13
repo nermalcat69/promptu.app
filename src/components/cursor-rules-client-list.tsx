@@ -8,38 +8,7 @@ import Link from "next/link";
 import { formatTokenCount } from "@/lib/token-calculator";
 import { UpvoteButton } from "@/components/upvote-button";
 import { useSearchParams } from "next/navigation";
-
-interface CursorRuleData {
-  id: string;
-  title: string;
-  slug: string;
-  description: string;
-  content: string;
-  ruleType: string;
-  globs?: string;
-  category: string;
-  author: {
-    id: string;
-    name: string;
-    image?: string;
-    username?: string;
-  };
-  upvotes: number;
-  views: number;
-  copyCount: number;
-  createdAt: string;
-  updatedAt: string;
-  tokens: number;
-}
-
-interface Pagination {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-}
+import { CursorRuleData, Pagination } from "@/lib/types";
 
 interface CursorRulesClientListProps {
   initialData: CursorRuleData[];
@@ -208,15 +177,15 @@ export function CursorRulesClientList({
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
                     <Avatar className="h-5 w-5">
-                      <AvatarImage src={rule.author.image || undefined} alt={rule.author.name} />
+                      <AvatarImage src={rule.author?.image || undefined} alt={rule.author?.name || 'Anonymous'} />
                       <AvatarFallback className="text-xs bg-gray-100">
-                        {rule.author.name.split(' ').map(n => n[0]).join('')}
+                        {rule.author?.name?.split(' ').map(n => n[0]).join('') || 'A'}
                       </AvatarFallback>
                     </Avatar>
-                    <span>{rule.author.name}</span>
+                    <span>{rule.author?.name || 'Anonymous'}</span>
                   </div>
                   <span className="font-mono">
-                    {formatTokenCount(rule.tokens)}
+                    {formatTokenCount(rule.tokens || 0)}
                   </span>
                 </div>
                 <div className="flex items-center gap-3">

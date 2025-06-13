@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Calendar, 
   ExternalLink, 
@@ -10,11 +11,12 @@ import {
   User as UserIcon, 
   Eye, 
   ThumbsUp, 
-  Copy 
+  Copy,
+  Terminal 
 } from "lucide-react";
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { prompt, user } from "@/lib/db/schema";
+import { prompt, user, cursorRule } from "@/lib/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { calculatePromptTokens, formatTokenCount } from "@/lib/token-calculator";
 
@@ -64,6 +66,27 @@ async function getUserPrompts(userId: string) {
   return userPrompts;
 }
 
+async function getUserCursorRules(userId: string) {
+  const userCursorRules = await db
+    .select({
+      id: cursorRule.id,
+      title: cursorRule.title,
+      slug: cursorRule.slug,
+      description: cursorRule.description,
+      ruleType: cursorRule.ruleType,
+      globs: cursorRule.globs,
+      upvotes: cursorRule.upvotes,
+      views: cursorRule.views,
+      copyCount: cursorRule.copyCount,
+      createdAt: cursorRule.createdAt,
+    })
+    .from(cursorRule)
+    .where(and(eq(cursorRule.authorId, userId), eq(cursorRule.published, true)))
+    .orderBy(desc(cursorRule.createdAt));
+
+  return userCursorRules;
+}
+
 function getPromptTypeColor(type: string) {
   switch (type) {
     case "system":
@@ -72,6 +95,21 @@ function getPromptTypeColor(type: string) {
       return "bg-green-100 text-green-800 border-green-200";
     case "developer":
       return "bg-purple-100 text-purple-800 border-purple-200";
+    default:
+      return "bg-gray-100 text-gray-800 border-gray-200";
+  }
+}
+
+function getRuleTypeColor(type: string) {
+  switch (type) {
+    case "always":
+      return "bg-blue-100 text-blue-800 border-blue-200";
+    case "auto-attached":
+      return "bg-green-100 text-green-800 border-green-200";
+    case "agent-requested":
+      return "bg-purple-100 text-purple-800 border-purple-200";
+    case "manual":
+      return "bg-orange-100 text-orange-800 border-orange-200";
     default:
       return "bg-gray-100 text-gray-800 border-gray-200";
   }
@@ -111,10 +149,14 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   }
 
   const userPrompts = await getUserPrompts(userData.id);
+  const userCursorRules = await getUserCursorRules(userData.id);
   
-  const totalUpvotes = userPrompts.reduce((sum, prompt) => sum + (prompt.upvotes || 0), 0);
-  const totalViews = userPrompts.reduce((sum, prompt) => sum + (prompt.views || 0), 0);
-  const totalCopies = userPrompts.reduce((sum, prompt) => sum + (prompt.copyCount || 0), 0);
+  const totalUpvotes = userPrompts.reduce((sum, prompt) => sum + (prompt.upvotes || 0), 0) + 
+                       userCursorRules.reduce((sum, rule) => sum + (rule.upvotes || 0), 0);
+  const totalViews = userPrompts.reduce((sum, prompt) => sum + (prompt.views || 0), 0) + 
+                     userCursorRules.reduce((sum, rule) => sum + (rule.views || 0), 0);
+  const totalCopies = userPrompts.reduce((sum, prompt) => sum + (prompt.copyCount || 0), 0) + 
+                      userCursorRules.reduce((sum, rule) => sum + (rule.copyCount || 0), 0);
 
   // Add token calculations for each prompt
   const promptsWithTokens = userPrompts.map(prompt => ({
@@ -187,6 +229,10 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                     <span className="font-semibold text-gray-900">{userPrompts.length}</span>
                   </div>
                   <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Cursor Rules</span>
+                    <span className="font-semibold text-gray-900">{userCursorRules.length}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Total Upvotes</span>
                     <span className="font-semibold text-gray-900">{totalUpvotes}</span>
                   </div>
@@ -209,226 +255,322 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               {/* Header */}
               <div>
                 <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-                  {userData.name}'s Prompts
+                  {userData.name}'s Content
                 </h2>
                 <p className="text-gray-600">
-                  {userPrompts.length} prompt{userPrompts.length !== 1 ? 's' : ''} published
+                  {userPrompts.length} prompt{userPrompts.length !== 1 ? 's' : ''} and {userCursorRules.length} cursor rule{userCursorRules.length !== 1 ? 's' : ''} published
                 </p>
               </div>
 
-              {/* Prompts Grid */}
-              {userPrompts.length === 0 ? (
-                <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 mb-4">
-                    <UserIcon className="h-6 w-6 text-gray-400" />
-                  </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    No prompts yet
-                  </h3>
-                  <p className="text-gray-600">
-                    {userData.name} hasn't published any prompts yet.
-                  </p>
-                </div>
-              ) : (
-                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                  {/* Desktop Table Header - Hidden on mobile/tablet */}
-                  <div className="hidden lg:block border-b border-gray-200 bg-gray-50">
-                    <div className="grid grid-cols-12 gap-4 px-4 py-3 text-xs font-medium text-gray-600 uppercase tracking-wide">
-                      <div className="col-span-6">Name</div>
-                      <div className="col-span-1">Tokens</div>
-                      <div className="col-span-2">Stats</div>
-                      <div className="col-span-2">Date</div>
-                      <div className="col-span-1">Action</div>
-                    </div>
-                  </div>
+              {/* Tabs */}
+              <Tabs defaultValue="prompts" className="space-y-6">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="prompts" className="flex items-center gap-2">
+                    <span>Prompts</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {userPrompts.length}
+                    </Badge>
+                  </TabsTrigger>
+                  <TabsTrigger value="cursor-rules" className="flex items-center gap-2">
+                    <Terminal className="h-4 w-4" />
+                    <span>Cursor Rules</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {userCursorRules.length}
+                    </Badge>
+                  </TabsTrigger>
+                </TabsList>
 
-                  {/* Medium Screen Table Header - Hidden on mobile and desktop */}
-                  <div className="hidden md:block lg:hidden border-b border-gray-200 bg-gray-50">
-                    <div className="grid grid-cols-10 gap-4 px-4 py-3 text-xs font-medium text-gray-600 uppercase tracking-wide">
-                      <div className="col-span-5">Name</div>
-                      <div className="col-span-2">Stats</div>
-                      <div className="col-span-2">Date</div>
-                      <div className="col-span-1">Action</div>
+                {/* Prompts Tab */}
+                <TabsContent value="prompts">
+                  {userPrompts.length === 0 ? (
+                    <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 mb-4">
+                        <UserIcon className="h-6 w-6 text-gray-400" />
+                      </div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        No prompts yet
+                      </h3>
+                      <p className="text-gray-600">
+                        {userData.name} hasn't published any prompts yet.
+                      </p>
                     </div>
-                  </div>
-
-                  {/* Table Body */}
-                  <div className="divide-y divide-gray-200">
-                    {promptsWithTokens.map((prompt) => (
-                      <div key={prompt.id} className="hover:bg-gray-50 transition-colors group">
-                        
-                        {/* Mobile Layout (< md) */}
-                        <div className="block md:hidden p-4 space-y-3">
-                          {/* Title */}
-                          <div className="flex items-start justify-between gap-2">
-                            <h3 className="font-medium text-gray-900 group-hover:text-gray-700 transition-colors text-sm leading-tight flex-1">
-                              <Link href={`/prompts/${prompt.slug}`}>
-                                {prompt.title}
-                              </Link>
-                            </h3>
-                            <Badge 
-                              variant="outline" 
-                              className={`${getPromptTypeColor(prompt.promptType)} text-xs whitespace-nowrap ml-2`}
-                            >
-                              {prompt.promptType}
-                            </Badge>
-                          </div>
-                          
-                          {/* Stats Row */}
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3 text-xs text-gray-500">
-                              <div className="flex items-center gap-1">
-                                <ThumbsUp className="h-3 w-3" />
-                                <span>{prompt.upvotes}</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Eye className="h-3 w-3" />
-                                <span>{prompt.views}</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Copy className="h-3 w-3" />
-                                <span>{prompt.copyCount}</span>
-                              </div>
-                            </div>
-                            
-                            <span className="text-xs text-gray-500 font-mono">
-                              {formatTokenCount(prompt.tokens)}
-                            </span>
-                          </div>
-                          
-                          {/* Date and Action Row */}
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-gray-500">
-                              {new Date(prompt.createdAt).toLocaleDateString()}
-                            </span>
-                            <Button variant="outline" size="sm" asChild className="h-7 text-xs">
-                              <Link href={`/prompts/${prompt.slug}`}>
-                                View
-                              </Link>
-                            </Button>
-                          </div>
+                  ) : (
+                    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                      {/* Desktop Table Header - Hidden on mobile/tablet */}
+                      <div className="hidden lg:block border-b border-gray-200 bg-gray-50">
+                        <div className="grid grid-cols-12 gap-4 px-4 py-3 text-xs font-medium text-gray-600 uppercase tracking-wide">
+                          <div className="col-span-6">Name</div>
+                          <div className="col-span-1">Tokens</div>
+                          <div className="col-span-2">Stats</div>
+                          <div className="col-span-2">Date</div>
+                          <div className="col-span-1">Action</div>
                         </div>
+                      </div>
 
-                        {/* Medium Screen Layout (md to lg) */}
-                        <div className="hidden md:grid lg:hidden grid-cols-10 gap-2 px-4 py-3">
-                          {/* Name Column */}
-                          <div className="col-span-5">
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-medium text-gray-900 group-hover:text-gray-700 transition-colors text-sm truncate">
+                      {/* Medium Screen Table Header - Hidden on mobile and desktop */}
+                      <div className="hidden md:block lg:hidden border-b border-gray-200 bg-gray-50">
+                        <div className="grid grid-cols-10 gap-4 px-4 py-3 text-xs font-medium text-gray-600 uppercase tracking-wide">
+                          <div className="col-span-5">Name</div>
+                          <div className="col-span-2">Stats</div>
+                          <div className="col-span-2">Date</div>
+                          <div className="col-span-1">Action</div>
+                        </div>
+                      </div>
+
+                      {/* Table Body */}
+                      <div className="divide-y divide-gray-200">
+                        {promptsWithTokens.map((prompt) => (
+                          <div key={prompt.id} className="hover:bg-gray-50 transition-colors group">
+                            
+                            {/* Mobile Layout (< md) */}
+                            <div className="block md:hidden p-4 space-y-3">
+                              {/* Title */}
+                              <div className="flex items-start justify-between gap-2">
+                                <h3 className="font-medium text-gray-900 group-hover:text-gray-700 transition-colors text-sm leading-tight flex-1">
                                   <Link href={`/prompts/${prompt.slug}`}>
                                     {prompt.title}
                                   </Link>
                                 </h3>
                                 <Badge 
                                   variant="outline" 
-                                  className={`${getPromptTypeColor(prompt.promptType)} text-xs mt-1`}
+                                  className={`${getPromptTypeColor(prompt.promptType)} text-xs whitespace-nowrap ml-2`}
                                 >
                                   {prompt.promptType}
                                 </Badge>
                               </div>
-                            </div>
-                          </div>
-                          
-                          {/* Stats Column */}
-                          <div className="col-span-2">
-                            <div className="flex items-center gap-3 text-xs text-gray-500">
-                              <div className="flex items-center gap-1">
-                                <ThumbsUp className="h-3 w-3" />
-                                <span>{prompt.upvotes}</span>
+                              
+                              {/* Stats Row */}
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3 text-xs text-gray-500">
+                                  <div className="flex items-center gap-1">
+                                    <ThumbsUp className="h-3 w-3" />
+                                    <span>{prompt.upvotes}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Eye className="h-3 w-3" />
+                                    <span>{prompt.views}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Copy className="h-3 w-3" />
+                                    <span>{prompt.copyCount}</span>
+                                  </div>
+                                </div>
+                                
+                                <span className="text-xs text-gray-500 font-mono">
+                                  {formatTokenCount(prompt.tokens)}
+                                </span>
                               </div>
-                              <div className="flex items-center gap-1">
-                                <Copy className="h-3 w-3" />
-                                <span>{prompt.copyCount}</span>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          {/* Date Column */}
-                          <div className="col-span-2">
-                            <span className="text-sm text-gray-500">
-                              {new Date(prompt.createdAt).toLocaleDateString()}
-                            </span>
-                          </div>
-                          
-                          {/* Action Column */}
-                          <div className="col-span-1">
-                            <Button variant="outline" size="sm" asChild className="h-7 text-xs">
-                              <Link href={`/prompts/${prompt.slug}`}>
-                                View
-                              </Link>
-                            </Button>
-                          </div>
-                        </div>
-
-                        {/* Desktop Layout (lg+) */}
-                        <div className="hidden lg:grid grid-cols-12 gap-4 px-4 py-3">
-                          {/* Name Column */}
-                          <div className="col-span-6">
-                            <div className="flex items-center gap-3">
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-medium text-gray-900 group-hover:text-gray-700 transition-colors text-sm truncate">
+                              
+                              {/* Date and Action Row */}
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-gray-500">
+                                  {new Date(prompt.createdAt).toLocaleDateString()}
+                                </span>
+                                <Button variant="outline" size="sm" asChild className="h-7 text-xs">
                                   <Link href={`/prompts/${prompt.slug}`}>
-                                    {prompt.title}
+                                    View
+                                  </Link>
+                                </Button>
+                              </div>
+                            </div>
+
+                            {/* Medium Screen Layout (md to lg) */}
+                            <div className="hidden md:grid lg:hidden grid-cols-10 gap-2 px-4 py-3">
+                              {/* Name Column */}
+                              <div className="col-span-5">
+                                <div className="flex items-center gap-2">
+                                  <div className="flex-1 min-w-0">
+                                    <h3 className="font-medium text-gray-900 group-hover:text-gray-700 transition-colors text-sm truncate">
+                                      <Link href={`/prompts/${prompt.slug}`}>
+                                        {prompt.title}
+                                      </Link>
+                                    </h3>
+                                    <Badge 
+                                      variant="outline" 
+                                      className={`${getPromptTypeColor(prompt.promptType)} text-xs mt-1`}
+                                    >
+                                      {prompt.promptType}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {/* Stats Column */}
+                              <div className="col-span-2">
+                                <div className="flex items-center gap-3 text-xs text-gray-500">
+                                  <div className="flex items-center gap-1">
+                                    <ThumbsUp className="h-3 w-3" />
+                                    <span>{prompt.upvotes}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Copy className="h-3 w-3" />
+                                    <span>{prompt.copyCount}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {/* Date Column */}
+                              <div className="col-span-2">
+                                <span className="text-sm text-gray-500">
+                                  {new Date(prompt.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                              
+                              {/* Action Column */}
+                              <div className="col-span-1">
+                                <Button variant="outline" size="sm" asChild className="h-7 text-xs">
+                                  <Link href={`/prompts/${prompt.slug}`}>
+                                    View
+                                  </Link>
+                                </Button>
+                              </div>
+                            </div>
+
+                            {/* Desktop Layout (lg+) */}
+                            <div className="hidden lg:grid grid-cols-12 gap-4 px-4 py-3">
+                              {/* Name Column */}
+                              <div className="col-span-6">
+                                <div className="flex items-center gap-2">
+                                  <div className="flex-1 min-w-0">
+                                    <h3 className="font-medium text-gray-900 group-hover:text-gray-700 transition-colors text-sm truncate">
+                                      <Link href={`/prompts/${prompt.slug}`}>
+                                        {prompt.title}
+                                      </Link>
+                                    </h3>
+                                    <Badge 
+                                      variant="outline" 
+                                      className={`${getPromptTypeColor(prompt.promptType)} text-xs mt-1`}
+                                    >
+                                      {prompt.promptType}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {/* Tokens Column */}
+                              <div className="col-span-1">
+                                <span className="text-sm text-gray-500 font-mono">
+                                  {formatTokenCount(prompt.tokens)}
+                                </span>
+                              </div>
+                              
+                              {/* Stats Column */}
+                              <div className="col-span-2">
+                                <div className="flex items-center gap-3 text-xs text-gray-500">
+                                  <div className="flex items-center gap-1">
+                                    <ThumbsUp className="h-3 w-3" />
+                                    <span>{prompt.upvotes}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Copy className="h-3 w-3" />
+                                    <span>{prompt.copyCount}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {/* Date Column */}
+                              <div className="col-span-2">
+                                <span className="text-sm text-gray-500">
+                                  {new Date(prompt.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                              
+                              {/* Action Column */}
+                              <div className="col-span-1">
+                                <Button variant="outline" size="sm" asChild className="h-7 text-xs">
+                                  <Link href={`/prompts/${prompt.slug}`}>
+                                    View
+                                  </Link>
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* Cursor Rules Tab */}
+                <TabsContent value="cursor-rules">
+                  {userCursorRules.length === 0 ? (
+                    <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-purple-100 mb-4">
+                        <Terminal className="h-6 w-6 text-purple-600" />
+                      </div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        No cursor rules yet
+                      </h3>
+                      <p className="text-gray-600">
+                        {userData.name} hasn't published any cursor rules yet.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {userCursorRules.map((rule) => (
+                        <div key={rule.id} className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h3 className="font-semibold text-gray-900">
+                                  <Link 
+                                    href={`/cursor-rules/${rule.slug}`}
+                                    className="hover:text-gray-700 transition-colors"
+                                  >
+                                    {rule.title}
                                   </Link>
                                 </h3>
-                                <p className="text-xs text-gray-500 truncate mt-1">{prompt.excerpt}</p>
+                                <Badge 
+                                  variant="outline" 
+                                  className={getRuleTypeColor(rule.ruleType)}
+                                >
+                                  {rule.ruleType.replace('-', ' ')}
+                                </Badge>
+                                {rule.globs && (
+                                  <Badge variant="outline" className="text-xs">
+                                    Files: {rule.globs}
+                                  </Badge>
+                                )}
                               </div>
-                              <Badge 
-                                variant="outline" 
-                                className={`${getPromptTypeColor(prompt.promptType)} text-xs whitespace-nowrap`}
-                              >
-                                {prompt.promptType}
-                              </Badge>
+                              
+                              <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+                                {rule.description}
+                              </p>
+
+                              <div className="flex items-center gap-4 text-sm text-gray-500">
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="h-4 w-4" />
+                                  <span>{new Date(rule.createdAt).toLocaleDateString()}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Eye className="h-4 w-4" />
+                                  <span>{rule.views || 0}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <ThumbsUp className="h-4 w-4" />
+                                  <span>{rule.upvotes || 0}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Copy className="h-4 w-4" />
+                                  <span>{rule.copyCount || 0}</span>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                          
-                          {/* Tokens Column */}
-                          <div className="col-span-1">
-                            <span className="text-sm text-gray-500 font-mono">
-                              {formatTokenCount(prompt.tokens)}
-                            </span>
-                          </div>
-                          
-                          {/* Stats Column */}
-                          <div className="col-span-2">
-                            <div className="flex items-center gap-3 text-xs text-gray-500">
-                              <div className="flex items-center gap-1">
-                                <ThumbsUp className="h-3 w-3" />
-                                <span>{prompt.upvotes}</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Eye className="h-3 w-3" />
-                                <span>{prompt.views}</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Copy className="h-3 w-3" />
-                                <span>{prompt.copyCount}</span>
-                              </div>
+
+                            <div className="flex items-center gap-2">
+                              <Button variant="outline" size="sm" asChild>
+                                <Link href={`/cursor-rules/${rule.slug}`}>
+                                  View
+                                </Link>
+                              </Button>
                             </div>
-                          </div>
-                          
-                          {/* Date Column */}
-                          <div className="col-span-2">
-                            <span className="text-sm text-gray-500">
-                              {new Date(prompt.createdAt).toLocaleDateString()}
-                            </span>
-                          </div>
-                          
-                          {/* Action Column */}
-                          <div className="col-span-1">
-                            <Button variant="outline" size="sm" asChild className="h-7 text-xs">
-                              <Link href={`/prompts/${prompt.slug}`}>
-                                View
-                              </Link>
-                            </Button>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
             </div>
           </div>
         </div>
