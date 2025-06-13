@@ -132,11 +132,78 @@ async function getCursorRules(searchParams: { [key: string]: string | string[] |
   };
 }
 
-export const metadata: Metadata = {
-  title: "Cursor Rules - Promptu",
-  description: "Discover configuration files and settings for AI-assisted coding environments like Cursor.",
-  keywords: ["cursor rules", "AI coding", "cursor configuration", "coding prompts", "development tools"],
-};
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}): Promise<Metadata> {
+  const resolvedSearchParams = await searchParams;
+  const search = resolvedSearchParams.search as string;
+  const type = resolvedSearchParams.type as string;
+  const category = resolvedSearchParams.category as string;
+  const sort = resolvedSearchParams.sort as string;
+
+  let title = "Cursor Rules - Promptu";
+  let description = "Discover configuration files and settings for AI-assisted coding environments like Cursor.";
+
+  // Dynamic title and description based on filters
+  if (search) {
+    title = `"${search}" Cursor Rules - Promptu`;
+    description = `Find Cursor rules matching "${search}". Browse our collection of AI coding configurations.`;
+  } else if (type && type !== "all") {
+    const typeNames = {
+      always: "Always Active",
+      "auto-attached": "Auto-Attached",
+      "agent-requested": "Agent Requested",
+      manual: "Manual"
+    };
+    const typeName = typeNames[type as keyof typeof typeNames] || type;
+    title = `${typeName} Cursor Rules - Promptu`;
+    description = `Browse ${typeName.toLowerCase()} cursor rules for AI-assisted coding. Optimize your development workflow.`;
+  } else if (category && category !== "all") {
+    title = `${category} Cursor Rules - Promptu`;
+    description = `Browse cursor rules in the ${category} category. Find specialized configurations for your coding needs.`;
+  }
+
+  // Add sort context
+  if (sort === "popular") {
+    title = title.replace(" - Promptu", " (Most Popular) - Promptu");
+  } else if (sort === "upvotes") {
+    title = title.replace(" - Promptu", " (Top Rated) - Promptu");
+  }
+
+  return {
+    title,
+    description,
+    keywords: [
+      "cursor rules",
+      "AI coding",
+      "cursor configuration",
+      "coding prompts",
+      "development tools",
+      search,
+      type,
+      category
+    ].filter(Boolean),
+    openGraph: {
+      title,
+      description,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
+    alternates: {
+      canonical: `https://promptu.dev/cursor-rules${
+        Object.keys(resolvedSearchParams).length > 0 
+          ? `?${new URLSearchParams(resolvedSearchParams as Record<string, string>).toString()}`
+          : ""
+      }`,
+    },
+  };
+}
 
 export default async function CursorRulesPage({
   searchParams,

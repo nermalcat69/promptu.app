@@ -129,11 +129,77 @@ async function getPrompts(searchParams: { [key: string]: string | string[] | und
   };
 }
 
-export const metadata: Metadata = {
-  title: "All AI Prompts - Promptu",
-  description: "Browse through our complete collection of AI prompts. Use filters to find exactly what you need.",
-  keywords: ["AI prompts", "system prompts", "user prompts", "developer prompts", "browse prompts"],
-};
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}): Promise<Metadata> {
+  const resolvedSearchParams = await searchParams;
+  const search = resolvedSearchParams.search as string;
+  const type = resolvedSearchParams.type as string;
+  const category = resolvedSearchParams.category as string;
+  const sort = resolvedSearchParams.sort as string;
+
+  let title = "All AI Prompts - Promptu";
+  let description = "Browse through our complete collection of AI prompts. Use filters to find exactly what you need.";
+
+  // Dynamic title and description based on filters
+  if (search) {
+    title = `"${search}" AI Prompts - Promptu`;
+    description = `Find AI prompts matching "${search}". Browse our collection of high-quality prompts.`;
+  } else if (type && type !== "all") {
+    const typeNames = {
+      system: "System",
+      user: "User",
+      developer: "Developer"
+    };
+    const typeName = typeNames[type as keyof typeof typeNames] || type;
+    title = `${typeName} AI Prompts - Promptu`;
+    description = `Browse our collection of ${typeName.toLowerCase()} prompts for AI assistants. Find the perfect prompt for your needs.`;
+  } else if (category && category !== "all") {
+    title = `${category} AI Prompts - Promptu`;
+    description = `Browse AI prompts in the ${category} category. Find specialized prompts for your specific use case.`;
+  }
+
+  // Add sort context
+  if (sort === "popular") {
+    title = title.replace(" - Promptu", " (Most Popular) - Promptu");
+  } else if (sort === "upvotes") {
+    title = title.replace(" - Promptu", " (Top Rated) - Promptu");
+  }
+
+  return {
+    title,
+    description,
+    keywords: [
+      "AI prompts",
+      "system prompts", 
+      "user prompts",
+      "developer prompts",
+      "browse prompts",
+      search,
+      type,
+      category
+    ].filter(Boolean),
+    openGraph: {
+      title,
+      description,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
+    alternates: {
+      canonical: `https://promptu.dev/prompts${
+        Object.keys(resolvedSearchParams).length > 0 
+          ? `?${new URLSearchParams(resolvedSearchParams as Record<string, string>).toString()}`
+          : ""
+      }`,
+    },
+  };
+}
 
 export default async function PromptsPage({
   searchParams,
