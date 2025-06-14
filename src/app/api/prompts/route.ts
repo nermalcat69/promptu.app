@@ -8,6 +8,9 @@ import { validatePromptContent, formatValidationErrorMessage } from "@/lib/valid
 import { sendPromptNotification } from "@/lib/discord";
 import { trackEvent } from "@/lib/redis";
 
+// Enable static generation with 24 hour revalidation for homepage requests
+export const revalidate = 86400; // 24 hours
+
 // GET /api/prompts - List prompts with filters
 export async function GET(request: NextRequest) {
   try {
@@ -18,6 +21,9 @@ export async function GET(request: NextRequest) {
     const categorySlug = searchParams.get("category");
     const search = searchParams.get("search");
     const sort = searchParams.get("sort") || "recent";
+
+    // For homepage requests (upvotes sort, page 1, limit 5), enable caching
+    const isHomepageRequest = sort === "upvotes" && page === 1 && limit === 5 && !type && !categorySlug && !search;
 
     const offset = (page - 1) * limit;
 
@@ -101,7 +107,7 @@ export async function GET(request: NextRequest) {
     const total = Number(totalResult[0]?.count || 0);
     const totalPages = Math.ceil(total / limit);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       prompts,
       pagination: {
         page,
@@ -112,6 +118,13 @@ export async function GET(request: NextRequest) {
         hasPrev: page > 1,
       },
     });
+
+    // Add caching headers for homepage requests
+    if (isHomepageRequest) {
+      response.headers.set('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=172800');
+    }
+
+    return response;
   } catch (error) {
     console.error("Error fetching prompts:", error);
     return NextResponse.json(

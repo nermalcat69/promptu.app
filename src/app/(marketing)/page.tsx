@@ -1,6 +1,3 @@
-"use client";
-
-import { useState, useEffect, useCallback } from "react";
 import { calculatePromptTokens, formatTokenCount } from "@/lib/token-calculator";
 import { VotingButtons } from "@/components/voting-buttons";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +6,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { SidebarFallback } from "@/components/sidebar-fallback";
+import { db } from "@/lib/db";
+import { prompt, cursorRule, user, category } from "@/lib/db/schema";
+import { eq, desc, and } from "drizzle-orm";
+
+// Revalidate every 24 hours (86400 seconds)
+export const revalidate = 86400;
 
 // Helper function for prompt type colors
 function getPromptTypeColor(type: string) {
@@ -134,88 +137,140 @@ function getContentTypeLabel(item: ContentItem) {
   return item.type === 'prompt' ? item.itemType : item.itemType;
 }
 
-export default function Home() {
-  const [content, setContent] = useState<ContentItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [initialLoad, setInitialLoad] = useState(true);
+// Server-side data fetching function
+async function getTopContent(): Promise<ContentItem[]> {
+  try {
+    // Fetch top 5 prompts
+    const topPrompts = await db
+      .select({
+        id: prompt.id,
+        title: prompt.title,
+        slug: prompt.slug,
+        excerpt: prompt.excerpt,
+        content: prompt.content,
+        promptType: prompt.promptType,
+        upvotes: prompt.upvotes,
+        views: prompt.views,
+        copyCount: prompt.copyCount,
+        featured: prompt.featured,
+        createdAt: prompt.createdAt,
+        author: {
+          id: user.id,
+          name: user.name,
+          image: user.image,
+          username: user.username,
+        },
+        category: {
+          id: category.id,
+          name: category.name,
+          slug: category.slug,
+        },
+      })
+      .from(prompt)
+      .leftJoin(user, eq(prompt.authorId, user.id))
+      .leftJoin(category, eq(prompt.categoryId, category.id))
+      .where(eq(prompt.published, true))
+      .orderBy(desc(prompt.upvotes))
+      .limit(5);
 
-  const fetchTopContent = useCallback(async () => {
-    try {
-      setLoading(true);
+    // Fetch top 5 cursor rules
+    const topCursorRules = await db
+      .select({
+        id: cursorRule.id,
+        title: cursorRule.title,
+        slug: cursorRule.slug,
+        description: cursorRule.description,
+        content: cursorRule.content,
+        ruleType: cursorRule.ruleType,
+        globs: cursorRule.globs,
+        upvotes: cursorRule.upvotes,
+        views: cursorRule.views,
+        copyCount: cursorRule.copyCount,
+        featured: cursorRule.featured,
+        createdAt: cursorRule.createdAt,
+        author: {
+          id: user.id,
+          name: user.name,
+          image: user.image,
+          username: user.username,
+        },
+        category: category.name,
+      })
+      .from(cursorRule)
+      .leftJoin(user, eq(cursorRule.authorId, user.id))
+      .leftJoin(category, eq(cursorRule.categoryId, category.id))
+      .where(eq(cursorRule.published, true))
+      .orderBy(desc(cursorRule.upvotes))
+      .limit(5);
+
+    const mixedContent: ContentItem[] = [];
+
+    // Process prompts
+    topPrompts.forEach((promptItem) => {
+      if (!promptItem.author) return; // Skip if no author
       
-      // Fetch top 5 prompts and top 5 cursor rules
-      const [promptsResponse, cursorRulesResponse] = await Promise.all([
-        fetch('/api/prompts?sort=upvotes&page=1&limit=5'),
-        fetch('/api/cursor-rules?sort=upvotes&page=1&limit=5')
-      ]);
+      const tokens = calculatePromptTokens(promptItem.title, promptItem.excerpt, promptItem.content).tokens;
+      mixedContent.push({
+        id: promptItem.id,
+        title: promptItem.title,
+        slug: promptItem.slug,
+        description: promptItem.excerpt,
+        content: promptItem.content,
+        type: 'prompt',
+        itemType: promptItem.promptType,
+        upvotes: promptItem.upvotes || 0,
+        views: promptItem.views || 0,
+        createdAt: promptItem.createdAt.toISOString(),
+        author: {
+          id: promptItem.author.id,
+          name: promptItem.author.name || 'Anonymous',
+          image: promptItem.author.image,
+          username: promptItem.author.username,
+        },
+        category: promptItem.category?.name || null,
+        tokens
+      });
+    });
 
-      const mixedContent: ContentItem[] = [];
-
-      if (promptsResponse.ok) {
-        const promptsData = await promptsResponse.json();
-        const prompts = promptsData.prompts || [];
-        
-        prompts.forEach((prompt: PromptData) => {
-          const tokens = calculatePromptTokens(prompt.title, prompt.excerpt, prompt.content).tokens;
-          mixedContent.push({
-            id: prompt.id,
-            title: prompt.title,
-            slug: prompt.slug,
-            description: prompt.excerpt,
-            content: prompt.content,
-            type: 'prompt',
-            itemType: prompt.promptType,
-            upvotes: prompt.upvotes,
-            views: prompt.views,
-            createdAt: prompt.createdAt,
-            author: prompt.author,
-            category: prompt.category?.name || null,
-            tokens
-          });
-        });
-      }
-
-      if (cursorRulesResponse.ok) {
-        const cursorRulesData = await cursorRulesResponse.json();
-        const cursorRules = cursorRulesData.cursorRules || [];
-        
-        cursorRules.forEach((rule: CursorRuleData) => {
-          const tokens = calculatePromptTokens(rule.title, rule.description, rule.content).tokens;
-          mixedContent.push({
-            id: rule.id,
-            title: rule.title,
-            slug: rule.slug,
-            description: rule.description,
-            content: rule.content,
-            type: 'cursor-rule',
-            itemType: rule.ruleType,
-            upvotes: rule.upvotes,
-            views: rule.views,
-            createdAt: rule.createdAt,
-            author: rule.author,
-            category: rule.category,
-            tokens,
-            globs: rule.globs
-          });
-        });
-      }
-
-      // Sort by upvotes (highest first) and take top 10
-      mixedContent.sort((a, b) => b.upvotes - a.upvotes);
-      setContent(mixedContent.slice(0, 10));
+    // Process cursor rules
+    topCursorRules.forEach((rule) => {
+      if (!rule.author) return; // Skip if no author
       
-    } catch (error) {
-      console.error('Error fetching top content:', error);
-    } finally {
-      setLoading(false);
-      setInitialLoad(false);
-    }
-  }, []);
+      const tokens = calculatePromptTokens(rule.title, rule.description, rule.content).tokens;
+      mixedContent.push({
+        id: rule.id,
+        title: rule.title,
+        slug: rule.slug,
+        description: rule.description,
+        content: rule.content,
+        type: 'cursor-rule',
+        itemType: rule.ruleType,
+        upvotes: rule.upvotes || 0,
+        views: rule.views || 0,
+        createdAt: rule.createdAt.toISOString(),
+        author: {
+          id: rule.author.id,
+          name: rule.author.name || 'Anonymous',
+          image: rule.author.image,
+          username: rule.author.username,
+        },
+        category: rule.category,
+        tokens,
+        globs: rule.globs || undefined
+      });
+    });
 
-  // Initial load
-  useEffect(() => {
-    fetchTopContent();
-  }, [fetchTopContent]);
+    // Sort by upvotes (highest first) and take top 10
+    mixedContent.sort((a, b) => b.upvotes - a.upvotes);
+    return mixedContent.slice(0, 10);
+  } catch (error) {
+    console.error('Error fetching top content:', error);
+    return [];
+  }
+}
+
+export default async function Home() {
+  const content = await getTopContent();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -234,15 +289,7 @@ export default function Home() {
           </div>
           
               {/* Top Content */}
-              {loading && initialLoad ? (
-                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                  <div className="p-8 text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Loading top content...</p>
-                  </div>
-                </div>
-              ) :
-              content.length === 0 ? (
+              {content.length === 0 ? (
                 <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                   <div className="p-8 text-center">
                     <p className="text-gray-600 mb-4">

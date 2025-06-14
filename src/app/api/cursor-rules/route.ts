@@ -7,6 +7,9 @@ import { headers } from "next/headers";
 import { sendPromptNotification } from "@/lib/discord";
 import { generateSlug } from "@/lib/utils";
 
+// Enable static generation with 24 hour revalidation for homepage requests
+export const revalidate = 86400; // 24 hours
+
 // GET /api/cursor-rules - Get cursor rules with filtering, search, and pagination
 export async function GET(request: NextRequest) {
   try {
@@ -17,6 +20,9 @@ export async function GET(request: NextRequest) {
     const ruleType = searchParams.get("type") || "";
     const categoryFilter = searchParams.get("category") || "";
     const sort = searchParams.get("sort") || "recent";
+
+    // For homepage requests (upvotes sort, page 1, limit 5), enable caching
+    const isHomepageRequest = sort === "upvotes" && page === 1 && limit === 5 && !search && !ruleType && !categoryFilter;
 
     const offset = (page - 1) * limit;
 
@@ -111,7 +117,7 @@ export async function GET(request: NextRequest) {
     const totalPages = Math.ceil(total / limit);
     const hasMore = page < totalPages;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       cursorRules,
       pagination: {
         page,
@@ -121,6 +127,13 @@ export async function GET(request: NextRequest) {
         hasMore,
       },
     });
+
+    // Add caching headers for homepage requests
+    if (isHomepageRequest) {
+      response.headers.set('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=172800');
+    }
+
+    return response;
   } catch (error) {
     console.error("Error fetching cursor rules:", error);
     return NextResponse.json(
