@@ -215,7 +215,7 @@ export function PromptPageClient({ prompt, tokens }: PromptPageClientProps) {
                 </div>
                 <Button asChild className="w-full" size="sm">
                   <Link 
-                    href="https://discord.gg/promptu" 
+                    href="https://discord.gg/WJDaqEdJRC" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="flex items-center gap-2"
