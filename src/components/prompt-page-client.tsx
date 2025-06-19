@@ -89,9 +89,11 @@ export function PromptPageClient({ prompt, tokens }: PromptPageClientProps) {
                       promptSlug={prompt.slug}
                       initialUpvotes={prompt.upvotes || 0}
                     />
-                    <span className="text-sm text-gray-500 font-mono">
-                      {formatTokenCount(tokens)}
-                    </span>
+                    <CopyButton 
+                      text={prompt.content}
+                      promptSlug={prompt.slug}
+                      onCopy={handleCopyIncrement}
+                    />
                   </div>
                 </div>
               </div>
@@ -127,7 +129,7 @@ export function PromptPageClient({ prompt, tokens }: PromptPageClientProps) {
                     <span>{copyCount}</span>
                   </div>
                   <span className="font-mono">
-                    {formatTokenCount(tokens)}
+                    {formatTokenCount(tokens)} tokens
                   </span>
                 </div>
               </div>
