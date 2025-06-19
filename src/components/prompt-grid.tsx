@@ -8,6 +8,7 @@ import { ChevronUp, MessageCircle, Copy } from "lucide-react";
 import Link from "next/link";
 import { calculatePromptTokens, formatTokenCount } from "@/lib/token-calculator";
 import { useDebouncedCallback } from "use-debounce";
+import { UpvoteButton } from "@/components/upvote-button";
 
 interface PromptData {
   id: string;
@@ -243,18 +244,11 @@ export function PromptGrid({ filters, currentPage = 1, limit = 12, onPaginationU
                   <span className="text-xs text-gray-500 font-mono">
                     {formatTokenCount(prompt.tokens)}
                   </span>
-                  <div className="flex items-center gap-1">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="h-7 w-8 p-0 cursor-pointer border border-gray-300 hover:border-green-500 hover:bg-green-50 hover:text-green-700 transition-all duration-200"
-                    >
-                      <ChevronUp className="h-4 w-4" />
-                    </Button>
-                    <span className="text-sm font-medium text-gray-900 min-w-[1.5rem] text-center">
-                      {prompt.upvotes || 0}
-                    </span>
-                  </div>
+                  <UpvoteButton 
+                    promptSlug={prompt.slug}
+                    initialUpvotes={prompt.upvotes || 0}
+                    className="flex-shrink-0"
+                  />
                 </div>
               </div>
               
@@ -303,18 +297,10 @@ export function PromptGrid({ filters, currentPage = 1, limit = 12, onPaginationU
               
               {/* Votes Column */}
               <div className="col-span-2">
-                <div className="flex items-center gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="h-7 w-8 p-0 cursor-pointer border border-gray-300 hover:border-green-500 hover:bg-green-50 hover:text-green-700 transition-all duration-200"
-                  >
-                    <ChevronUp className="h-4 w-4" />
-                  </Button>
-                  <span className="text-sm font-medium text-gray-900">
-                    {prompt.upvotes || 0}
-                  </span>
-                </div>
+                <UpvoteButton 
+                  promptSlug={prompt.slug}
+                  initialUpvotes={prompt.upvotes || 0}
+                />
               </div>
               
               {/* Copies Column */}
@@ -377,18 +363,10 @@ export function PromptGrid({ filters, currentPage = 1, limit = 12, onPaginationU
               
               {/* Votes Column */}
               <div className="col-span-2">
-                <div className="flex items-center gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="h-7 w-8 p-0 cursor-pointer border border-gray-300 hover:border-green-500 hover:bg-green-50 hover:text-green-700 transition-all duration-200"
-                  >
-                    <ChevronUp className="h-4 w-4" />
-                  </Button>
-                  <span className="text-sm font-medium text-gray-900">
-                    {prompt.upvotes || 0}
-                  </span>
-                </div>
+                <UpvoteButton 
+                  promptSlug={prompt.slug}
+                  initialUpvotes={prompt.upvotes || 0}
+                />
               </div>
               
               {/* Copies Column */}

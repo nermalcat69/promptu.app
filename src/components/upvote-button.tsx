@@ -78,23 +78,21 @@ export function UpvoteButton({ promptSlug, initialUpvotes, className, contentTyp
   };
 
   return (
-    <div className="flex items-center gap-1">
-      <Button 
-        variant="outline" 
-        size="sm" 
-        onClick={handleUpvote}
-        disabled={loading || isPending}
-        className={`h-7 w-8 p-0 cursor-pointer border transition-all duration-200 ${
-          upvoted 
-            ? 'border-green-500 bg-green-50 text-green-700' 
-            : 'border-gray-300 hover:border-green-500 hover:bg-green-50 hover:text-green-700'
-        } ${className || ''}`}
-      >
-        <ChevronUp className="h-4 w-4" />
-      </Button>
-      <span className="text-sm font-medium text-gray-900 min-w-[1.5rem] text-center">
-        {upvotes || 0} {(upvotes || 0) === 1 ? 'upvote' : 'upvotes'}
+    <Button 
+      variant="outline" 
+      size="sm" 
+      onClick={handleUpvote}
+      disabled={loading || isPending}
+      className={`h-7 px-2 cursor-pointer border transition-all duration-200 flex items-center gap-1 ${
+        upvoted 
+          ? 'border-green-700 bg-green-600 text-white hover:bg-green-700 shadow-md' 
+          : 'border-gray-300 hover:border-green-500 hover:bg-green-50 hover:text-green-700'
+      } ${className || ''}`}
+    >
+      <ChevronUp className="h-4 w-4" />
+      <span className="text-sm font-medium">
+        {upvotes || 0}
       </span>
-    </div>
+    </Button>
   );
 } 
