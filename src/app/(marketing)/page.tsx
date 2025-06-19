@@ -1,5 +1,5 @@
 import { calculatePromptTokens, formatTokenCount } from "@/lib/token-calculator";
-import { VotingButtons } from "@/components/voting-buttons";
+import { UpvoteButton } from "@/components/upvote-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -365,11 +365,9 @@ export default async function Home() {
                               <span className="text-xs text-gray-500 font-mono">
                                 {formatTokenCount(item.tokens)}
                               </span>
-                              <VotingButtons 
+                              <UpvoteButton 
                                 promptSlug={item.slug}
-                                size="sm"
-                                showCounts={true}
-                                upvoteOnly={true}
+                                initialUpvotes={item.upvotes}
                                 contentType={item.type}
                               />
                             </div>
@@ -420,11 +418,9 @@ export default async function Home() {
                           
                           {/* Votes Column */}
                           <div className="col-span-2">
-                            <VotingButtons 
+                            <UpvoteButton 
                               promptSlug={item.slug}
-                              size="sm"
-                              showCounts={true}
-                              upvoteOnly={true}
+                              initialUpvotes={item.upvotes}
                               contentType={item.type}
                             />
                           </div>
@@ -489,11 +485,9 @@ export default async function Home() {
                           
                           {/* Votes Column */}
                           <div className="col-span-2">
-                            <VotingButtons 
+                            <UpvoteButton 
                               promptSlug={item.slug}
-                              size="sm"
-                              showCounts={true}
-                              upvoteOnly={true}
+                              initialUpvotes={item.upvotes}
                               contentType={item.type}
                             />
                           </div>

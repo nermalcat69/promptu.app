@@ -69,10 +69,10 @@ export function CopyButton({
 
   return (
     <Button
-      variant={variant}
+      variant="outline"
       size={size}
       className={cn(
-        copied && "bg-green-600 hover:bg-green-700 text-white",
+        "bg-gray-100 hover:bg-gray-200 text-gray-900 border-gray-300 hover:border-gray-400",
         className
       )}
       onClick={handleCopy}
