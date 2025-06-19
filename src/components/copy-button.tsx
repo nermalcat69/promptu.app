@@ -70,9 +70,9 @@ export function CopyButton({
   return (
     <Button
       variant="outline"
-      size={size}
+      size="sm"
       className={cn(
-        "bg-gray-100 hover:bg-gray-200 text-gray-900 border-gray-300 hover:border-gray-400",
+        "h-7 px-2 bg-gray-100 hover:bg-gray-200 text-gray-900 border-gray-300 hover:border-gray-400 flex items-center gap-1",
         className
       )}
       onClick={handleCopy}
@@ -86,7 +86,7 @@ export function CopyButton({
       
       {showText && (
         <span className="ml-2">
-          {children || (copied ? "Copied prompt" : "Copy")}
+          {children || (copied ? "Copied!" : "Copy")}
         </span>
       )}
     </Button>
